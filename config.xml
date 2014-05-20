@@ -1,0 +1,74 @@
+<?xml version='1.0' encoding='utf-8'?>
+<widget id="com.emailbox.foundation.famous.pub" version="0.0.0.2" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0" xmlns:gap="http://phonegap.com/ns/1.0">
+    <feature name="App">
+        <param name="android-package" value="org.apache.cordova.App" />
+    </feature>
+    <name>Foundation2</name>
+    <description>
+        My Email
+    </description>
+    <author email="nick@getemailbox.com" href="http://getemailbox.com">
+        Nick Reed
+    </author>
+    <content src="index.html" />
+    <access origin="*" />
+    <preference name="phonegap-version" value="3.4.0" />
+    <preference name="orientation" value="portrait" />
+    <preference name="fullscreen" value="false" />
+    <preference name="target-device" value="handset" />
+    <preference name="disallowOverscroll" value="true" />
+    <preference name="webviewbounce" value="false" />
+    <preference name="exit-on-suspend" value="false" />
+    <preference name="detect-data-types" value="false" />
+    <preference name="StatusBarOverlaysWebview" value="false" />
+    <gap:platform name="ios" />
+    <gap:platform name="android" />
+    <gap:config-file overwrite="true" parent="UIViewControllerBasedStatusBarAppearance" platform="ios">
+        <false />
+    </gap:config-file>
+    <gap:config-file overwrite="true" parent="UIStatusBarHidden" platform="ios">
+        <true />
+    </gap:config-file>
+    <gap:plugin name="org.apache.cordova.device" />
+    <gap:plugin name="org.apache.cordova.file" />
+    <gap:plugin name="org.apache.cordova.file-transfer" />
+    <gap:plugin name="org.apache.cordova.inappbrowser" />
+    <gap:plugin name="org.apache.cordova.geolocation" />
+    <gap:plugin name="com.phonegap.plugins.pushplugin" />
+    <gap:plugin name="com.phonegap.plugins.barcodescanner" />
+    <gap:plugin name="com.phonegap.plugin.statusbar" />
+    <gap:plugin name="nl.x-services.plugins.toast" version="1.0" />
+    <gap:plugin name="de.appplant.cordova.plugin.local-notification" />
+    <feature name="Toast">
+        <param name="ios-package" value="Toast" />
+        <param name="android-package" value="nl.xservices.plugins.Toast" />
+    </feature>
+    <feature name="Device">
+        <param name="android-package" value="org.apache.cordova.device.Device" />
+    </feature>
+    <feature name="File">
+        <param name="onload" value="true" />
+        <param name="android-package" value="org.apache.cordova.file.FileUtils" />
+        <param name="ios-package" value="CDVFile" />
+    </feature>
+    <feature name="FileTransfer">
+        <param name="android-package" value="org.apache.cordova.filetransfer.FileTransfer" />
+        <param name="ios-package" value="CDVFileTransfer" />
+    </feature>
+    <feature name="InAppBrowser">
+        <param name="android-package" value="org.apache.cordova.inappbrowser.InAppBrowser" />
+        <param name="ios-package" value="CDVInAppBrowser" />
+    </feature>
+    <feature name="PushPlugin">
+        <param name="android-package" value="com.plugin.gcm.PushPlugin" />
+        <param name="ios-package" value="PushPlugin" />
+    </feature>
+    <feature name="LocalNotification">
+        <param name="android-package" value="de.appplant.cordova.plugin.localnotification.LocalNotification" />
+        <param name="ios-package" value="APPLocalNotification" />
+    </feature>
+    <icon src="icon.png" />
+    <icon gap:platform="ios" src="icon_ios.png" />
+    <gap:splash src="splash.png" />
+    <gap:splash gap:platform="ios" height="1136" src="splash/ios/Default_iphone5.png" width="640" />
+</widget>
