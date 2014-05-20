@@ -9,17 +9,18 @@
 
 define(function(require, exports, module) {
     /**
-     *  A singleton that maintains a global registry of Surfaces.
+     * A singleton that maintains a global registry of Surfaces.
+     *   Private.
      *
      * @private
      * @static
-     * @namespace Entity
+     * @class Entity
      */
 
     var entities = [];
 
     /**
-     * Get entity from global index
+     * Get entity from global index.
      *
      * @private
      * @method get

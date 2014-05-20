@@ -10,20 +10,13 @@
 define(function(require, exports, module) {
     var Body = require('./Body');
     var Matrix = require('famous/math/Matrix');
-    /*
-     * @class An elemental rectangle-shaped Body in the physics engine.
+
+    /**
+     * Implements a rectangular geometry for an Body with
+     * size = [width, height].
      *
-     * @description This is a region defined by a 2D box.
-     *
-     * * Class/Namespace TODOs
-     *
-     * * opts:
-     *   * size: ([height, width]) array
-     *   * inherited opts from: {@link Body}.
-     *
-     * @name Rectangle
+     * @class Rectangle
      * @extends Body
-     * @example TODO
      * @constructor
      */
     function Rectangle(options) {
@@ -35,6 +28,11 @@ define(function(require, exports, module) {
     Rectangle.prototype = Object.create(Body.prototype);
     Rectangle.prototype.constructor = Rectangle;
 
+    /**
+     * Basic setter for size.
+     * @method setSize
+     * @param size {Array} size = [width, height]
+     */
     Rectangle.prototype.setSize = function setSize(size) {
         this.size = size;
         this.setMomentsOfInertia();
@@ -56,8 +54,6 @@ define(function(require, exports, module) {
             [0, 12 / (m * w * w), 0],
             [0, 0, 12 / (m * (w * w + h * h))]
         ]);
-
-        this.inertiaInverseTranspose = this.inverseInertia.clone();
     };
 
     module.exports = Rectangle;

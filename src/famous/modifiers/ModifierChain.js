@@ -18,7 +18,7 @@ define(function(require, exports, module) {
      */
     function ModifierChain() {
         this._chain = [];
-        if (arguments.length) this.add.apply(this, arguments);
+        if (arguments.length) this.addModifier.apply(this, arguments);
     }
 
     /**
@@ -26,7 +26,7 @@ define(function(require, exports, module) {
      *
      * @method addModifier
      *
-     * @param {...*} varargs args list of type Modifier
+     * @param {...Modifier*} varargs args list of Modifiers
      */
     ModifierChain.prototype.addModifier = function addModifier(varargs) {
         Array.prototype.push.apply(this._chain, arguments);

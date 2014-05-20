@@ -14,15 +14,16 @@ define(function(require, exports, module) {
 
     /**
      * ContainerSurface is an object designed to contain surfaces and
-     * set properties to be applied to all of them at once.
-     * A container surface will enforce these properties on the
-     * surfaces it contains:
+     *   set properties to be applied to all of them at once.
+     *   This extends the Surface class.
+     *   A container surface will enforce these properties on the
+     *   surfaces it contains:
      *
-     * - size (clips contained surfaces to its own width and height)
+     *   size (clips contained surfaces to its own width and height);
      *
-     * - origin
+     *   origin;
      *
-     * - its own opacity and transform, which will be automatically
+     *   its own opacity and transform, which will be automatically
      *   applied to  all Surfaces contained directly and indirectly.
      *
      * @class ContainerSurface

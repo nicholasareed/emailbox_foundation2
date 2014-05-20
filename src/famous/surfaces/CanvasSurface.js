@@ -12,6 +12,7 @@ define(function(require, exports, module) {
 
     /**
      * A surface containing an HTML5 Canvas element.
+     *   This extends the Surface class.
      *
      * @class CanvasSurface
      * @extends Surface

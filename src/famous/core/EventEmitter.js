@@ -56,14 +56,14 @@ define(function(require, exports, module) {
     };
 
     /**
-     * Alias for "on"
+     * Alias for "on".
      * @method addListener
      */
     EventEmitter.prototype.addListener = EventEmitter.prototype.on;
 
    /**
      * Unbind an event by type and handler.
-     *   This undoes the work of "on"".
+     *   This undoes the work of "on".
      *
      * @method removeListener
      *
@@ -78,7 +78,7 @@ define(function(require, exports, module) {
     };
 
     /**
-     * Call event handlers with this set to owner
+     * Call event handlers with this set to owner.
      *
      * @method bindThis
      *

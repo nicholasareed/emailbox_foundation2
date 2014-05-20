@@ -11,7 +11,8 @@ define(function(require, exports, module) {
 
     /**
      * Internal helper object to Context that handles the process of
-     * creating and allocating DOM elements within a managed div.
+     *   creating and allocating DOM elements within a managed div.
+     *   Private.
      *
      * @class ElementAllocator
      * @constructor

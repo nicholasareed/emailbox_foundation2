@@ -11,8 +11,6 @@ define(function(require, exports, module) {
     var Matrix = require('./Matrix');
 
     /**
-     * Docs: TODO
-     *
      * @class Quaternion
      * @constructor
      *
@@ -34,11 +32,10 @@ define(function(require, exports, module) {
 
     var register = new Quaternion(1,0,0,0);
 
-    /*
-     * Docs: TODO
-     *
+    /**
+     * Doc: TODO
      * @method add
-     * @param {Number} q
+     * @param {Quaternion} q
      * @return {Quaternion}
      */
     Quaternion.prototype.add = function add(q) {
@@ -54,7 +51,7 @@ define(function(require, exports, module) {
      * Docs: TODO
      *
      * @method sub
-     * @param {Number} q
+     * @param {Quaternion} q
      * @return {Quaternion}
      */
     Quaternion.prototype.sub = function sub(q) {
@@ -66,8 +63,8 @@ define(function(require, exports, module) {
         );
     };
 
-    /*
-     * Docs: TODO
+    /**
+     * Doc: TODO
      *
      * @method scalarDivide
      * @param {Number} s
@@ -97,7 +94,7 @@ define(function(require, exports, module) {
      * Docs: TODO
      *
      * @method multiply
-     * @param {Number} q
+     * @param {Quaternion} q
      * @return {Quaternion}
      */
     Quaternion.prototype.multiply = function multiply(q) {
@@ -125,7 +122,7 @@ define(function(require, exports, module) {
      * Docs: TODO
      *
      * @method rotateVector
-     * @param {Number} v
+     * @param {Vector} v
      * @return {Quaternion}
      */
     Quaternion.prototype.rotateVector = function rotateVector(v) {
@@ -184,8 +181,8 @@ define(function(require, exports, module) {
      * Docs: TODO
      *
      * @method makeFromAngleAndAxis
-     * @param {Number} axis
-     * @param {Number} v
+     * @param {Number} angle
+     * @param {Vector} v
      * @return {Quaternion}
      */
     Quaternion.prototype.makeFromAngleAndAxis = function makeFromAngleAndAxis(angle, v) {
@@ -223,7 +220,7 @@ define(function(require, exports, module) {
      * Docs: TODO
      *
      * @method set
-     * @param {Number} v
+     * @param {Array|Quaternion} v
      * @return {Quaternion}
      */
     Quaternion.prototype.set = function set(v) {
@@ -243,18 +240,19 @@ define(function(require, exports, module) {
         return this;
     };
 
-    /*
+    /**
      * Docs: TODO
      *
      * @method put
-     * @param {Number} q
+     * @param {Quaternion} q
+     * @return {Quaternion}
      */
     Quaternion.prototype.put = function put(q) {
         q.set(register);
     };
 
-    /*
-     * Docs: TODO
+    /**
+     * Doc: TODO
      *
      * @method clone
      * @return {Quaternion}
@@ -263,8 +261,8 @@ define(function(require, exports, module) {
         return new Quaternion(this);
     };
 
-    /*
-     * Docs: TODO
+    /**
+     * Doc: TODO
      *
      * @method clear
      * @return {Quaternion}
@@ -277,30 +275,30 @@ define(function(require, exports, module) {
         return this;
     };
 
-    /*
-     * Docs: TODO
+    /**
+     * Doc: TODO
      *
      * @method isEqual
-     * @param {Number} q
-     * @return {Quaternion}
+     * @param {Quaternion} q
+     * @return {Boolean}
      */
     Quaternion.prototype.isEqual = function isEqual(q) {
         return q.w === this.w && q.x === this.x && q.y === this.y && q.z === this.z;
     };
 
-    /*
-     * Docs: TODO
+    /**
+     * Doc: TODO
      *
      * @method dot
-     * @param {Number} q
+     * @param {Quaternion} q
      * @return {Number}
      */
     Quaternion.prototype.dot = function dot(q) {
         return this.w * q.w + this.x * q.x + this.y * q.y + this.z * q.z;
     };
 
-    /*
-     * Docs: TODO
+    /**
+     * Doc: TODO
      *
      * @method normSquared
      * @return {Number}
@@ -309,8 +307,8 @@ define(function(require, exports, module) {
         return this.dot(this);
     };
 
-    /*
-     * Docs: TODO
+    /**
+     * Doc: TODO
      *
      * @method norm
      * @return {Number}
@@ -319,8 +317,8 @@ define(function(require, exports, module) {
         return Math.sqrt(this.normSquared());
     };
 
-    /*
-     * Docs: TODO
+    /**
+     * Doc: TODO
      *
      * @method isZero
      * @return {Boolean}
@@ -329,11 +327,11 @@ define(function(require, exports, module) {
         return !(this.x || this.y || this.z);
     };
 
-    /*
-     * Docs: TODO
+    /**
+     * Doc: TODO
      *
      * @method getTransform
-     * @return {Array}
+     * @return {Transform}
      */
     Quaternion.prototype.getTransform = function getTransform() {
         var temp = this.normalize(1);
@@ -365,11 +363,11 @@ define(function(require, exports, module) {
 
     var matrixRegister = new Matrix();
 
-    /*
-     * Docs: TODO
+    /**
+     * Doc: TODO
      *
      * @method getMatrix
-     * @return {Array}
+     * @return {Transform}
      */
     Quaternion.prototype.getMatrix = function getMatrix() {
         var temp = this.normalize(1);
@@ -400,13 +398,13 @@ define(function(require, exports, module) {
 
     var epsilon = 1e-5;
 
-    /*
-     * Docs: TODO
+    /**
+     * Doc: TODO
      *
      * @method slerp
-     * @param {Number} q
+     * @param {Quaternion} q
      * @param {Number} t
-     * @return {Quaternion}
+     * @return {Transform}
      */
     Quaternion.prototype.slerp = function slerp(q, t) {
         var omega;

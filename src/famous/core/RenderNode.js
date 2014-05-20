@@ -36,7 +36,7 @@ define(function(require, exports, module) {
     }
 
     /**
-     * Append a renderable to its list of this node's children.
+     * Append a renderable to the list of this node's children.
      *   This produces a new RenderNode in the tree.
      *   Note: Does not double-wrap if child is a RenderNode already.
      *

@@ -15,15 +15,14 @@ define(function(require, exports, module) {
     var Matrix = require('famous/math/Matrix');
 
     /**
-     * A unit controlled by the physics engine which serves to provide position and orientation.
-     *    Body extends {@link Particle}. A Body is a Particle that has rotation as well as position.
-     *    Thus just like how Particle has velocity, momentum, etc,
-     *    Body adds angular velocity, angular momentum, etc.
+     * A unit controlled by the physics engine which extends the zero-dimensional
+     * Particle to include geometry. In addition to maintaining the state
+     * of a Particle its state includes orientation, angular velocity
+     * and angular momentum and responds to torque forces.
      *
      * @class Body
      * @extends Particle
      * @constructor
-     * @example TODO
      */
     function Body(options) {
         Particle.call(this, options);
@@ -65,25 +64,59 @@ define(function(require, exports, module) {
         this.setMomentsOfInertia();
     };
 
+    /**
+     * Setter for moment of inertia, which is necessary to give proper
+     * angular inertia depending on the geometry of the body.
+     *
+     * @method setMomentsOfInertia
+     */
     Body.prototype.setMomentsOfInertia = function setMomentsOfInertia() {
         this.inertia = new Matrix();
         this.inverseInertia = new Matrix();
-        this.inverseInertiaTranspose = new Matrix();
     };
 
+    /**
+     * Update the angular velocity from the angular momentum state.
+     *
+     * @method updateAngularVelocity
+     */
     Body.prototype.updateAngularVelocity = function updateAngularVelocity() {
         this.angularVelocity.set(this.inverseInertia.vectorMultiply(this.angularMomentum));
     };
 
+    /**
+     * Determine world coordinates from the local coordinate system. Useful
+     * if the Body has rotated in space.
+     *
+     * @method toWorldCoordinates
+     * @param localPosition {Vector} local coordinate vector
+     * @return global coordinate vector {Vector}
+     */
     Body.prototype.toWorldCoordinates = function toWorldCoordinates(localPosition) {
         return this.pWorld.set(this.orientation.rotateVector(localPosition));
     };
 
+    /**
+     * Calculates the kinetic and intertial energy of a body.
+     *
+     * @method getEnergy
+     * @return energy {Number}
+     */
     Body.prototype.getEnergy = function getEnergy() {
         return Particle.prototype.getEnergy.call(this)
             + 0.5 * this.inertia.vectorMultiply(this.angularVelocity).dot(this.angularVelocity);
     };
 
+    /**
+     * Extends Particle.reset to reset orientation, angular velocity
+     * and angular momentum.
+     *
+     * @method reset
+     * @param [p] {Array|Vector} position
+     * @param [v] {Array|Vector} velocity
+     * @param [q] {Array|Quaternion} orientation
+     * @param [L] {Array|Vector} angular momentum
+     */
     Body.prototype.reset = function reset(p, v, q, L) {
         Particle.prototype.reset.call(this, p, v);
         this.angularVelocity.clear();
@@ -91,49 +124,69 @@ define(function(require, exports, module) {
         this.setAngularMomentum(L || [0,0,0]);
     };
 
+    /**
+     * Setter for orientation
+     *
+     * @method setOrientation
+     * @param q {Array|Quaternion} orientation
+     */
     Body.prototype.setOrientation = function setOrientation(q) {
         this.orientation.set(q);
     };
 
+    /**
+     * Setter for angular velocity
+     *
+     * @method setAngularVelocity
+     * @param w {Array|Vector} angular velocity
+     */
     Body.prototype.setAngularVelocity = function setAngularVelocity(w) {
         this.wake();
         this.angularVelocity.set(w);
     };
 
+    /**
+     * Setter for angular momentum
+     *
+     * @method setAngularMomentum
+     * @param L {Array|Vector} angular momentum
+     */
     Body.prototype.setAngularMomentum = function setAngularMomentum(L) {
         this.wake();
         this.angularMomentum.set(L);
     };
 
+    /**
+     * Extends Particle.applyForce with an optional argument
+     * to apply the force at an off-centered location, resulting in a torque.
+     *
+     * @method applyForce
+     * @param force {Vector} force
+     * @param [location] {Vector} off-center location on the body
+     */
     Body.prototype.applyForce = function applyForce(force, location) {
         Particle.prototype.applyForce.call(this, force);
         if (location !== undefined) this.applyTorque(location.cross(force));
     };
 
+    /**
+     * Applied a torque force to a body, inducing a rotation.
+     *
+     * @method applyTorque
+     * @param torque {Vector} torque
+     */
     Body.prototype.applyTorque = function applyTorque(torque) {
         this.wake();
         this.torque.set(this.torque.add(torque));
     };
 
-    Body.prototype.applyTorqueImpulse = function applyTorqueImpulse(torqueImpulse) {
-        var R    = this.orientation.getMatrix();
-        var Iinv = this.inverseInertia;
-        var M = [];
-
-        for (var i = 0; i < 3; i++) {
-            M[i] = [];
-            for (var j = 0; j < 3; j++) {
-                var sum = 0;
-                for (var k = 0; k < 3; k++) {
-                    sum += R[i][k] * Iinv[k][k] * R[j][k];
-                }
-                M[i][j] = sum;
-            }
-        }
-        this.inverseInertiaTranspose.set(M);
-        this.setAngularVelocity(this.angularVelocity.add(M.vectorMultiply(torqueImpulse)));
-    };
-
+    /**
+     * Extends Particle.getTransform to include a rotational component
+     * derived from the particle's orientation.
+     *
+     * @method getTransform
+     * @return transform {Transform}
+     */
     Body.prototype.getTransform = function getTransform() {
         return Transform.thenMove(
             this.orientation.getTransform(),
@@ -141,6 +194,14 @@ define(function(require, exports, module) {
         );
     };
 
+    /**
+     * Extends Particle._integrate to also update the rotational states
+     * of the body.
+     *
+     * @method getTransform
+     * @protected
+     * @param dt {Number} delta time
+     */
     Body.prototype._integrate = function _integrate(dt) {
         Particle.prototype._integrate.call(this, dt);
         this.integrateAngularMomentum(dt);
@@ -148,10 +209,22 @@ define(function(require, exports, module) {
         this.integrateOrientation(dt);
     };
 
+    /**
+     * Updates the angular momentum via the its integrator.
+     *
+     * @method integrateAngularMomentum
+     * @param dt {Number} delta time
+     */
     Body.prototype.integrateAngularMomentum = function integrateAngularMomentum(dt) {
         Body.INTEGRATOR.integrateAngularMomentum(this, dt);
     };
 
+    /**
+     * Updates the orientation via the its integrator.
+     *
+     * @method integrateOrientation
+     * @param dt {Number} delta time
+     */
     Body.prototype.integrateOrientation = function integrateOrientation(dt) {
         Body.INTEGRATOR.integrateOrientation(this, dt);
     };

@@ -94,7 +94,7 @@ define(function(require, exports, module) {
     };
 
     /**
-     * Given another vector v, return cross product (v)x(this)
+     * Given another vector v, return cross product (v)x(this).
      *   Note: This sets the internal result register, so other references to that vector will change.
      *
      * @method cross
@@ -224,7 +224,7 @@ define(function(require, exports, module) {
      * Scale Vector to specified length.
      *   If length is less than internal tolerance, set vector to [length, 0, 0].
      *   Note: This sets the internal result register, so other references to that vector will change.
-     * @name normalize
+     * @method normalize
      *
      * @param {number} length target length, default 1.0
      * @return {Vector}
@@ -279,7 +279,7 @@ define(function(require, exports, module) {
     }
 
     /**
-     * Set this Vector to the values in the provided numbArray or Vector.
+     * Set this Vector to the values in the provided Array or Vector.
      *
      * @method set
      * @param {object} v array, Vector, or number

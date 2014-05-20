@@ -61,7 +61,7 @@ define(function(require, exports, module) {
         object.pipe = handler.pipe.bind(handler);
         object.unpipe = handler.unpipe.bind(handler);
         object.on = handler.on.bind(handler);
-        object.addListener = handler.on;
+        object.addListener = object.on;
         object.removeListener = handler.removeListener.bind(handler);
     };
 
@@ -79,7 +79,7 @@ define(function(require, exports, module) {
         EventEmitter.prototype.emit.apply(this, arguments);
         var i = 0;
         for (i = 0; i < this.downstream.length; i++) {
-            this.downstream[i].trigger(type, event);
+            if (this.downstream[i].trigger) this.downstream[i].trigger(type, event);
         }
         for (i = 0; i < this.downstreamFn.length; i++) {
             this.downstreamFn[i](type, event);
@@ -116,12 +116,12 @@ define(function(require, exports, module) {
 
     /**
      * Remove handler object from set of downstream handlers.
-     * Undoes work of "pipe".
+     *   Undoes work of "pipe".
      *
      * @method unpipe
      *
-     * @param {EventHandler} target target emitter object
-     * @return {EventHanlder} provided target
+     * @param {EventHandler} target target handler object
+     * @return {EventHandler} provided target
      */
     EventHandler.prototype.unpipe = function unpipe(target) {
         if (target.unsubscribe instanceof Function) return target.unsubscribe(this);
@@ -159,13 +159,13 @@ define(function(require, exports, module) {
     };
 
     /**
-     * Alias for "on""
+     * Alias for "on"
      * @method addListener
      */
     EventHandler.prototype.addListener = EventHandler.prototype.on;
 
     /**
-     * Listen for events from an upstream event handler
+     * Listen for events from an upstream event handler.
      *
      * @method subscribe
      *
@@ -184,7 +184,7 @@ define(function(require, exports, module) {
     };
 
     /**
-     * Stop listening to events from an upstream event handler
+     * Stop listening to events from an upstream event handler.
      *
      * @method unsubscribe
      *

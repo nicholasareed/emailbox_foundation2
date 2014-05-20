@@ -15,7 +15,7 @@ define(function(require, exports, module) {
 
     /**
      * SnapTransition is a method of transitioning between two values (numbers,
-     * or arrays of numbers). It is similar to @link{SpringTransition} except
+     * or arrays of numbers). It is similar to SpringTransition except
      * the transition can be much faster and always has a damping effect.
      *
      * @class SnapTransition
@@ -227,8 +227,8 @@ define(function(require, exports, module) {
     };
 
     /**
-     * Getter
-     *
+     * Get the current position of the transition
+s     *
      * @method get
      *
      * @return state {Number|Array}
@@ -239,7 +239,7 @@ define(function(require, exports, module) {
     };
 
     /**
-     * Setter
+     * Set the end position and transition, with optional callback on completion.
      *
      * @method set
      *

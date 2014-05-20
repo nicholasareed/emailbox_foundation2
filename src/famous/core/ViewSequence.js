@@ -8,6 +8,7 @@
  */
 
 define(function(require, exports, module) {
+
     /**
      * Helper object used to iterate through items sequentially. Used in
      *   views that deal with layout.  A ViewSequence object conceptually points
@@ -16,7 +17,6 @@ define(function(require, exports, module) {
      * @class ViewSequence
      *
      * @constructor
-     *
      * @param {Object|Array} options Options object, or content array.
      * @param {Number} [options.index] starting index.
      * @param {Number} [options.array] Array of elements to populate the ViewSequence
@@ -66,17 +66,12 @@ define(function(require, exports, module) {
 
     // After splicing into the backing store, restore the indexes of each node correctly.
     ViewSequence.Backing.prototype.reindex = function reindex(start, removeCount, insertCount) {
+        if (!this.array[0]) return;
+
         var i = 0;
         var index = this.firstIndex;
         var indexShiftAmount = insertCount - removeCount;
         var node = this.firstNode;
-        
-        if(start === this.firstIndex) {
-            for (var i = 0; i < removeCount; i++) {
-                this.firstNode = this.firstNode.getNext();   
-            }
-            this.firstNode.index = this.firstIndex;
-        }
 
         // find node to begin
         while (index < start - 1) {
@@ -104,7 +99,8 @@ define(function(require, exports, module) {
             node = spliceResumeNode;
             index++;
             while (node && index < this.array.length + this.firstIndex) {
-                node.index += indexShiftAmount;
+                if (node._nextNode) node.index += indexShiftAmount;
+                else node.index = index;
                 node = node.getNext();
                 index++;
             }

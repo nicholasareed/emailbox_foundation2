@@ -12,7 +12,8 @@ define(function(require, exports, module) {
     var EventHandler = require('./EventHandler');
     var Transform = require('./Transform');
 
-    var usePrefix = document.body.style.webkitTransform !== undefined;
+    var devicePixelRatio = window.devicePixelRatio || 1;
+    var usePrefix = document.createElement('div').style.webkitTransform !== undefined;
 
     /**
      * A base class for viewable content and event
@@ -81,7 +82,7 @@ define(function(require, exports, module) {
 
     /**
      * Unbind an event by type and handler.
-     *   This undoes the work of "on""
+     *   This undoes the work of "on"
      *
      * @method removeListener
      * @param {string} type event type key (for example, 'click')
@@ -98,13 +99,13 @@ define(function(require, exports, module) {
      * @method emit
      *
      * @param {string} type event type key (for example, 'click')
-     * @param {Object} event event data
+     * @param {Object} [event] event data
      * @return {EventHandler} this
      */
     Surface.prototype.emit = function emit(type, event) {
         if (event && !event.origin) event.origin = this;
         var handled = this.eventHandler.emit(type, event);
-        if (handled && event.stopPropagation) event.stopPropagation();
+        if (handled && event && event.stopPropagation) event.stopPropagation();
         return handled;
     };
 
@@ -122,12 +123,12 @@ define(function(require, exports, module) {
 
     /**
      * Remove handler object from set of downstream handlers.
-     * Undoes work of "pipe"
+     *   Undoes work of "pipe"
      *
      * @method unpipe
      *
-     * @param {EventHandler} target target emitter object
-     * @return {EventHanlder} provided target
+     * @param {EventHandler} target target handler object
+     * @return {EventHandler} provided target
      */
     Surface.prototype.unpipe = function unpipe(target) {
         return this.eventHandler.unpipe(target);
@@ -147,7 +148,7 @@ define(function(require, exports, module) {
 
     /**
      * Set CSS-style properties on this Surface. Note that this will cause
-     *    dirtying and thus re-rendering, even if values do not change
+     *    dirtying and thus re-rendering, even if values do not change.
      *
      * @method setProperties
      * @param {Object} properties property dictionary of "key" => "value"
@@ -164,7 +165,7 @@ define(function(require, exports, module) {
      *
      * @method getProperties
      *
-     * @return {Object} Dictionary of properties of this Surface.
+     * @return {Object} Dictionary of this Surface's properties.
      */
     Surface.prototype.getProperties = function getProperties() {
         return this.properties;
@@ -189,7 +190,6 @@ define(function(require, exports, module) {
      * Remove CSS-style class from the list of classes on this Surface.
      *   Note this will map directly to the HTML property of the actual
      *   corresponding rendered <div>.
-     *   These will be deployed to the document on call to setup().
      *
      * @method removeClass
      * @param {string} className name of class to remove
@@ -257,11 +257,7 @@ define(function(require, exports, module) {
      * Set options for this surface
      *
      * @method setOptions
-     *
-     * @param {Array.Number} [options.size] [width, height] in pixels
-     * @param {Array.string} [options.classes] CSS classes to set on inner content
-     * @param {Array} [options.properties] string dictionary of HTML attributes to set on target div
-     * @param {string} [options.content] inner (HTML) content of surface
+     * @param {Object} [options] overrides for default options.  See constructor.
      */
     Surface.prototype.setOptions = function setOptions(options) {
         if (options.size) this.setSize(options.size);
@@ -312,7 +308,7 @@ define(function(require, exports, module) {
     /**
      * Return a Matrix's webkit css representation to be used with the
      *    CSS3 -webkit-transform style.
-     * @example: -webkit-transform: matrix3d(1,0,0,0,0,1,0,0,0,0,1,0,716,243,0,1)
+     *    Example: -webkit-transform: matrix3d(1,0,0,0,0,1,0,0,0,0,1,0,716,243,0,1)
      *
      * @method _formatCSSTransform
      * @private
@@ -320,6 +316,9 @@ define(function(require, exports, module) {
      * @return {string} matrix3d CSS style representation of the transform
      */
     function _formatCSSTransform(m) {
+        m[12] = Math.round(m[12] * devicePixelRatio) / devicePixelRatio;
+        m[13] = Math.round(m[13] * devicePixelRatio) / devicePixelRatio;
+
         var result = 'matrix3d(';
         for (var i = 0; i < 15; i++) {
             result += (m[i] < 0.000001 && m[i] > -0.000001) ? '0,' : m[i] + ',';
@@ -340,15 +339,27 @@ define(function(require, exports, module) {
      * @param {FamousMatrix} matrix
      */
 
-    var _setMatrix = usePrefix ? function(element, matrix) {
-        element.style.webkitTransform = _formatCSSTransform(matrix);
-    } : function(element, matrix) {
-        element.style.transform = _formatCSSTransform(matrix);
-    };
+    var _setMatrix;
+    if (navigator.userAgent.toLowerCase().indexOf('firefox') > -1) {
+        _setMatrix = function(element, matrix) {
+            element.style.zIndex = (matrix[14] * 1000000) | 0;    // fix for Firefox z-buffer issues
+            element.style.transform = _formatCSSTransform(matrix);
+        };
+    }
+    else if (usePrefix) {
+        _setMatrix = function(element, matrix) {
+            element.style.webkitTransform = _formatCSSTransform(matrix);
+        };
+    }
+    else {
+        _setMatrix = function(element, matrix) {
+            element.style.transform = _formatCSSTransform(matrix);
+        };
+    }
 
     // format origin as CSS percentage string
     function _formatCSSOrigin(origin) {
-        return (100 * origin[0]).toFixed(6) + '% ' + (100 * origin[1]).toFixed(6) + '%';
+        return (100 * origin[0]) + '% ' + (100 * origin[1]) + '%';
     }
 
      // Directly apply given origin coordinates to the document element as the
@@ -394,7 +405,6 @@ define(function(require, exports, module) {
         }
         target.style.display = '';
         _addEventListeners.call(this, target);
-        _setOrigin(target, [0, 0]); // handled internally
         this._currTarget = target;
         this._stylesDirty = true;
         this._classesDirty = true;
@@ -424,6 +434,24 @@ define(function(require, exports, module) {
         var origin = context.origin;
         var size = context.size;
 
+        if (this._classesDirty) {
+            _cleanupClasses.call(this, target);
+            var classList = this.getClassList();
+            for (var i = 0; i < classList.length; i++) target.classList.add(classList[i]);
+            this._classesDirty = false;
+        }
+
+        if (this._stylesDirty) {
+            _applyStyles.call(this, target);
+            this._stylesDirty = false;
+        }
+
+        if (this._contentDirty) {
+            this.deploy(target);
+            this.eventHandler.emit('deploy');
+            this._contentDirty = false;
+        }
+
         if (this.size) {
             var origSize = size;
             size = [this.size[0], this.size[1]];
@@ -431,8 +459,13 @@ define(function(require, exports, module) {
             if (size[1] === undefined && origSize[1]) size[1] = origSize[1];
         }
 
+        if (size[0] === true) size[0] = target.clientWidth;
+        if (size[1] === true) size[1] = target.clientHeight;
+
         if (_xyNotEquals(this._size, size)) {
-            this._size = [size[0], size[1]];
+            if (!this._size) this._size = [0, 0];
+            this._size[0] = size[0];
+            this._size[1] = size[1];
             this._sizeDirty = true;
         }
 
@@ -448,7 +481,7 @@ define(function(require, exports, module) {
             target.style.opacity = (opacity >= 1) ? '0.999999' : opacity;
         }
 
-        if (_xyNotEquals(this._origin, origin) || Transform.notEquals(this._matrix, matrix)) {
+        if (_xyNotEquals(this._origin, origin) || Transform.notEquals(this._matrix, matrix) || this._sizeDirty) {
             if (!matrix) matrix = Transform.identity;
             this._matrix = matrix;
             var aaMatrix = matrix;
@@ -456,34 +489,18 @@ define(function(require, exports, module) {
                 if (!this._origin) this._origin = [0, 0];
                 this._origin[0] = origin[0];
                 this._origin[1] = origin[1];
-                aaMatrix = Transform.moveThen([-this._size[0] * origin[0], -this._size[1] * origin[1], 0], matrix);
+                aaMatrix = Transform.thenMove(matrix, [-this._size[0] * origin[0], -this._size[1] * origin[1], 0]);
+                _setOrigin(target, origin);
             }
             _setMatrix(target, aaMatrix);
         }
 
-        if (!(this._classesDirty || this._stylesDirty || this._sizeDirty || this._contentDirty)) return;
-
-        if (this._classesDirty) {
-            _cleanupClasses.call(this, target);
-            var classList = this.getClassList();
-            for (var i = 0; i < classList.length; i++) target.classList.add(classList[i]);
-            this._classesDirty = false;
-        }
-        if (this._stylesDirty) {
-            _applyStyles.call(this, target);
-            this._stylesDirty = false;
-        }
         if (this._sizeDirty) {
             if (this._size) {
-                target.style.width = (this._size[0] !== true) ? this._size[0] + 'px' : '';
-                target.style.height = (this._size[1] !== true) ? this._size[1] + 'px' : '';
+                target.style.width = (this.size && this.size[0] === true) ? '' : this._size[0] + 'px';
+                target.style.height = (this.size && this.size[1] === true) ?  '' : this._size[1] + 'px';
             }
             this._sizeDirty = false;
-        }
-        if (this._contentDirty) {
-            this.deploy(target);
-            this.eventHandler.emit('deploy');
-            this._contentDirty = false;
         }
     };
 
@@ -569,7 +586,7 @@ define(function(require, exports, module) {
      * Set x and y dimensions of the surface.
      *
      * @method setSize
-     * @param {Array.Number} size x,y size array
+     * @param {Array.Number} size as [width, height]
      */
     Surface.prototype.setSize = function setSize(size) {
         this.size = size ? [size[0], size[1]] : null;

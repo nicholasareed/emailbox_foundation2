@@ -19,12 +19,12 @@ define(function(require, exports, module) {
      * @class HeaderFooterLayout
      * @constructor
      * @param {Options} [options] An object of configurable options.
-     * @param {Number} [direction=HeaderFooterLayout.DIRECTION_Y] A direction of HeaderFooterLayout.DIRECTION_X
+     * @param {Number} [options.direction=HeaderFooterLayout.DIRECTION_Y] A direction of HeaderFooterLayout.DIRECTION_X
      * lays your HeaderFooterLayout instance horizontally, and a direction of HeaderFooterLayout.DIRECTION_Y
      * lays it out vertically.
-     * @param {Number} [headerSize=undefined]  The amount of pixels allocated to the header node
+     * @param {Number} [options.headerSize=undefined]  The amount of pixels allocated to the header node
      * in the HeaderFooterLayout instance's direction.
-     * @param {Number} [footerSize=undefined] The amount of pixels allocated to the footer node
+     * @param {Number} [options.footerSize=undefined] The amount of pixels allocated to the footer node
      * in the HeaderFooterLayout instance's direction.
      */
     function HeaderFooterLayout(options) {
@@ -48,7 +48,8 @@ define(function(require, exports, module) {
      *  @default 0
      *  @protected
      */
-    /** @const */ HeaderFooterLayout.DIRECTION_X = 0;
+    HeaderFooterLayout.DIRECTION_X = 0;
+
     /**
      *  When used as a value for your HeaderFooterLayout's direction option, causes it to lay out vertically.
      *
@@ -58,7 +59,7 @@ define(function(require, exports, module) {
      *  @default 1
      *  @protected
      */
-    /** @const */ HeaderFooterLayout.DIRECTION_Y = 1;
+    HeaderFooterLayout.DIRECTION_Y = 1;
 
     HeaderFooterLayout.DEFAULT_OPTIONS = {
         direction: HeaderFooterLayout.DIRECTION_Y,
@@ -68,6 +69,13 @@ define(function(require, exports, module) {
         defaultFooterSize: 0
     };
 
+    /**
+     * Generate a render spec from the contents of this component.
+     *
+     * @private
+     * @method render
+     * @return {Object} Render spec for this component
+     */
     HeaderFooterLayout.prototype.render = function render() {
         return this._entityId;
     };
@@ -88,15 +96,24 @@ define(function(require, exports, module) {
     }
 
     function _outputTransform(offset) {
-        if (this.options.direction == HeaderFooterLayout.DIRECTION_X) return Transform.translate(offset, 0, 0);
+        if (this.options.direction === HeaderFooterLayout.DIRECTION_X) return Transform.translate(offset, 0, 0);
         else return Transform.translate(0, offset, 0);
     }
 
     function _finalSize(directionSize, size) {
-        if (this.options.direction == HeaderFooterLayout.DIRECTION_X) return [directionSize, size[1]];
+        if (this.options.direction === HeaderFooterLayout.DIRECTION_X) return [directionSize, size[1]];
         else return [size[0], directionSize];
     }
 
+    /**
+     * Apply changes from this component to the corresponding document element.
+     * This includes changes to classes, styles, size, content, opacity, origin,
+     * and matrix transforms.
+     *
+     * @private
+     * @method commit
+     * @param {Context} context commit context
+     */
     HeaderFooterLayout.prototype.commit = function commit(context) {
         var transform = context.transform;
         var origin = context.origin;
@@ -126,13 +143,12 @@ define(function(require, exports, module) {
             }
         ];
 
-        var nextSpec = {
+        return {
             transform: transform,
             opacity: opacity,
             size: size,
             target: result
         };
-        return nextSpec;
     };
 
     module.exports = HeaderFooterLayout;

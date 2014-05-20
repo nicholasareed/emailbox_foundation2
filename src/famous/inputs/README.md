@@ -1,4 +1,4 @@
-Inputs: Famous user input libraries
+Inputs: Famous user input libraries [![Build Status](https://travis-ci.org/Famous/inputs.svg)](https://travis-ci.org/Famous/inputs)
 ===================================
 
 The inputs library is used to interpret user input to the device. Its primary 
@@ -25,8 +25,7 @@ concept is the 'Sync' interface.
 
 ## Documentation
 
-- [Main Documentation][inputs-documentation]
-- [Famous Sync Overview][sync-overview] (TODO: Revise heavily)
+- [Reference Docs][reference-documentation]
 
 
 ## Maintainer
@@ -42,5 +41,4 @@ This Source Code Form is subject to the terms of the Mozilla Public License,
 v. 2.0. If a copy of the MPL was not distributed with this file, You can obtain 
 one at http://mozilla.org/MPL/2.0/.
 
-[inputs-documentation]: http://launch.famo.us/docs/current/inputs
-[sync-overview]: https://github.com/Famous/internal/wiki/Famous-Sync-Overview
+[reference-documentation]: http://famo.us/docs

@@ -13,15 +13,20 @@ define(function(require, exports, module) {
 
     /**
      *  A spring constraint is like a spring force, except that it is always
-     *  numerically stable (even for low periods), at the expense of introducing
-     *  damping (even with dampingRatio set to 0).
+     *    numerically stable (even for low periods), at the expense of introducing
+     *    damping (even with dampingRatio set to 0).
      *
-     *      Use this if you need fast spring-like behavior, e.g., snapping
+     *    Use this if you need fast spring-like behavior, e.g., snapping
      *
      *  @class Snap
      *  @constructor
      *  @extends Constraint
-     *  @param options {Object}
+     *  @param {Options} [options] An object of configurable options.
+     *  @param {Number} [options.period] The amount of time in milliseconds taken for one complete oscillation when there is no damping. Range : [150, Infinity]
+     *  @param {Number} [options.dampingRatio] Additional damping of the spring. Range : [0, 1]. At 0 this spring will still be damped, at 1 the spring will be critically damped (the spring will never oscillate)
+     *  @param {Number} [options.length] The rest length of the spring. Range: [0, Infinity].
+     *  @param {Array} [options.anchor] The location of the spring's anchor, if not another physics body.
+     *
      */
     function Snap(options) {
         this.options = Object.create(this.constructor.DEFAULT_OPTIONS);
@@ -39,52 +44,10 @@ define(function(require, exports, module) {
     Snap.prototype = Object.create(Constraint.prototype);
     Snap.prototype.constructor = Snap;
 
-    /**
-     * @property Snap.DEFAULT_OPTIONS
-     * @type Object
-     * @protected
-     * @static
-     */
     Snap.DEFAULT_OPTIONS = {
-
-        /**
-         * The amount of time in milliseconds taken for one complete oscillation
-         * when there is no damping
-         *    Range : [150, Infinity]
-         * @attribute period
-         * @type Number
-         * @default 300
-         */
         period        : 300,
-
-        /**
-         * Additional damping of the spring
-         *    Range : [0, 1]
-         *    0 = note this will still be damped
-         *    1 = critically damped (the spring will never oscillate)
-         * @attribute dampingRatio
-         * @type Number
-         * @default 300
-         */
         dampingRatio : 0.1,
-
-        /**
-         * The rest length of the spring
-         *    Range : [0, Infinity]
-         * @attribute length
-         * @type Number
-         * @default 0
-         */
         length : 0,
-
-        /**
-         * The location of the spring's anchor, if not another physics body
-         *
-         * @attribute anchor
-         * @type Array
-         * @default 0.01
-         * @optional
-         */
         anchor : undefined
     };
 
@@ -171,28 +134,32 @@ define(function(require, exports, module) {
 
             pDiff.set(p1.sub(anchor));
             var dist = pDiff.norm() - length;
+            var effMass;
 
             if (source) {
                 var w2 = source.inverseMass;
                 var v2 = source.velocity;
                 vDiff.set(v1.sub(v2));
-                var effMass = 1/(w1 + w2);
+                effMass = 1/(w1 + w2);
             }
             else {
                 vDiff.set(v1);
-                var effMass = m1;
+                effMass = m1;
             }
 
+            var gamma;
+            var beta;
+
             if (this.options.period === 0) {
-                var gamma = 0;
-                var beta = 1;
+                gamma = 0;
+                beta = 1;
             }
             else {
                 var k = 4 * effMass * pi * pi / (period * period);
                 var c = 4 * effMass * pi * dampingRatio / period;
 
-                var beta  = dt * k / (c + dt * k);
-                var gamma = 1 / (c + dt*k);
+                beta  = dt * k / (c + dt * k);
+                gamma = 1 / (c + dt*k);
             }
 
             var antiDrift = beta/dt * dist;

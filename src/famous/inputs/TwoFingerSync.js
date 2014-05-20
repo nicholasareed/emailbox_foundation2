@@ -17,32 +17,13 @@ define(function(require, exports, module) {
      *
      * @class TwoFingerSync
      * @constructor
-     * @param {function} legacyGetter position getter function (deprecated)
-     * @param {Object} options default option overrides
-     * @param {Number | Array.Number} [options.scale] scale outputs by scalar
      */
-    function TwoFingerSync(legacyGetter, options) {
-        if (arguments.length === 2){
-            this._legacyPositionGetter = arguments[0];
-            options = arguments[1];
-        }
-        else {
-            this._legacyPositionGetter = null;
-            options = arguments[0];
-        }
+    function TwoFingerSync() {
+        this._eventInput = new EventHandler();
+        this._eventOutput = new EventHandler();
 
-        this.options = {
-            scale: 1
-        };
-
-        if (options) this.setOptions(options);
-        else this.setOptions(this.options);
-
-        this.input = new EventHandler();
-        this.output = new EventHandler();
-
-        EventHandler.setInputHandler(this, this.input);
-        EventHandler.setOutputHandler(this, this.output);
+        EventHandler.setInputHandler(this, this._eventInput);
+        EventHandler.setOutputHandler(this, this._eventOutput);
 
         this.touchAEnabled = false;
         this.touchAId = 0;
@@ -53,34 +34,31 @@ define(function(require, exports, module) {
         this.posB = null;
         this.timestampB = 0;
 
-        this.input.on('touchstart', this.handleStart.bind(this));
-        this.input.on('touchmove', this.handleMove.bind(this));
-        this.input.on('touchend', this.handleEnd.bind(this));
-        this.input.on('touchcancel', this.handleEnd.bind(this));
+        this._eventInput.on('touchstart', this.handleStart.bind(this));
+        this._eventInput.on('touchmove', this.handleMove.bind(this));
+        this._eventInput.on('touchend', this.handleEnd.bind(this));
+        this._eventInput.on('touchcancel', this.handleEnd.bind(this));
     }
 
-    /**
-     * Return entire options dictionary, including defaults.
-     *
-     * @method getOptions
-     * @return {Object} configuration options
-     */
-    TwoFingerSync.prototype.getOptions = function getOptions() {
-        return this.options;
+    TwoFingerSync.calculateAngle = function(posA, posB) {
+        var diffX = posB[0] - posA[0];
+        var diffY = posB[1] - posA[1];
+        return Math.atan2(diffY, diffX);
     };
 
-    /**
-     * Set internal options, overriding any default options
-     *
-     * @method setOptions
-     *
-     * @param {Object} [options] overrides of default options.  See constructor.
-     */
-    TwoFingerSync.prototype.setOptions = function setOptions(options) {
-        if (options.scale !== undefined) this.options.scale = options.scale;
+    TwoFingerSync.calculateDistance = function(posA, posB) {
+        var diffX = posB[0] - posA[0];
+        var diffY = posB[1] - posA[1];
+        return Math.sqrt(diffX * diffX + diffY * diffY);
     };
 
-    // handle touchstart, private
+    TwoFingerSync.calculateCenter = function(posA, posB) {
+        return [(posA[0] + posB[0]) / 2.0, (posA[1] + posB[1]) / 2.0];
+    };
+
+    var _now = Date.now;
+
+    // private
     TwoFingerSync.prototype.handleStart = function handleStart(event) {
         for (var i = 0; i < event.changedTouches.length; i++) {
             var touch = event.changedTouches[i];
@@ -88,19 +66,19 @@ define(function(require, exports, module) {
                 this.touchAId = touch.identifier;
                 this.touchAEnabled = true;
                 this.posA = [touch.pageX, touch.pageY];
-                this.timestampA = Date.now();
+                this.timestampA = _now();
             }
             else if (!this.touchBEnabled) {
                 this.touchBId = touch.identifier;
                 this.touchBEnabled = true;
                 this.posB = [touch.pageX, touch.pageY];
-                this.timestampB = Date.now();
+                this.timestampB = _now();
                 this._startUpdate(event);
             }
         }
     };
 
-    // handle touchmove, private
+    // private
     TwoFingerSync.prototype.handleMove = function handleMove(event) {
         if (!(this.touchAEnabled && this.touchBEnabled)) return;
         var prevTimeA = this.timestampA;
@@ -110,35 +88,29 @@ define(function(require, exports, module) {
             var touch = event.changedTouches[i];
             if (touch.identifier === this.touchAId) {
                 this.posA = [touch.pageX, touch.pageY];
-                this.timestampA = Date.now();
+                this.timestampA = _now();
                 diffTime = this.timestampA - prevTimeA;
             }
             else if (touch.identifier === this.touchBId) {
                 this.posB = [touch.pageX, touch.pageY];
-                this.timestampB = Date.now();
+                this.timestampB = _now();
                 diffTime = this.timestampB - prevTimeB;
             }
         }
-        // This is meant to be overridden in
         if (diffTime) this._moveUpdate(diffTime);
     };
 
-    // handle touchend and touchcancel, private
+    // private
     TwoFingerSync.prototype.handleEnd = function handleEnd(event) {
-        var pos = (this.options.direction === undefined)
-            ? this._legacyPositionGetter ? this._legacyPositionGetter : [0,0]
-            : this._legacyPositionGetter ? this._legacyPositionGetter : 0;
-        var scale = this.options.scale;
         for (var i = 0; i < event.changedTouches.length; i++) {
             var touch = event.changedTouches[i];
             if (touch.identifier === this.touchAId || touch.identifier === this.touchBId) {
-                if (this.touchAEnabled && this.touchBEnabled) this.output.emit('end', {
-                    position: pos,
-                    velocity: scale*this._vel,
-                    touches: [this.touchAId, this.touchBId],
-                    angle: this._angle
-                });
-
+                if (this.touchAEnabled && this.touchBEnabled) {
+                    this._eventOutput.emit('end', {
+                        touches : [this.touchAId, this.touchBId],
+                        angle   : this._angle
+                    });
+                }
                 this.touchAEnabled = false;
                 this.touchAId = 0;
                 this.touchBEnabled = false;

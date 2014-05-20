@@ -34,7 +34,7 @@ define(function(require, exports, module) {
     };
 
     /**
-     * Retrieve itsem from cache or from mapping functin.
+     * Retrieve items from cache or from mapping functin.
      *
      * @method get
      * @param {Object} input input key

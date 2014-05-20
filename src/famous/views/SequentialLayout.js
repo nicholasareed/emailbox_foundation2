@@ -15,14 +15,14 @@ define(function(require, exports, module) {
 
     /**
      * SequentialLayout will lay out a collection of renderables sequentially in the specified direction.
-     * @class ScrollContainer
+     * @class SequentialLayout
      * @constructor
      * @param {Options} [options] An object of configurable options.
-     * @param {Number} [direction=Utility.Direction.Y] Using the direction helper found in the famous Utility
+     * @param {Number} [options.direction=Utility.Direction.Y] Using the direction helper found in the famous Utility
      * module, this option will lay out the SequentialLayout instance's renderables either horizontally
      * (x) or vertically (y). Utility's direction is essentially either zero (X) or one (Y), so feel free
      * to just use integers as well.
-     * @param {Array.Number} [defaultItemSize=[50, 50]] In the case where a renderable layed out
+     * @param {Array.Number} [options.defaultItemSize=[50, 50]] In the case where a renderable layed out
      * under SequentialLayout's control doesen't have a getSize method, SequentialLayout will assign it
      * this default size. (Commonly a case with Views).
      */
@@ -65,7 +65,7 @@ define(function(require, exports, module) {
      * Sets the collection of renderables under the SequentialLayout instance's control.
      *
      * @method sequenceFrom
-     * @param {Array|ViewSequence} sequence Either an array of renderables or a Famous viewSequence.
+     * @param {Array|ViewSequence} items Either an array of renderables or a Famous viewSequence.
      * @chainable
      */
     SequentialLayout.prototype.sequenceFrom = function sequenceFrom(items) {
@@ -88,9 +88,9 @@ define(function(require, exports, module) {
 
     /**
      * setOutputFunction is used to apply a user-defined output transform on each processed renderable.
-     * For a good example, check out SequentialLayout's own DEFAULT_OUTPUT_FUNCTION in the code.
+     *  For a good example, check out SequentialLayout's own DEFAULT_OUTPUT_FUNCTION in the code.
      *
-     * @method setOptions
+     * @method setOutputFunction
      * @param {Function} outputFunction An output processer for each renderable in the SequentialLayout
      * instance.
      * @chainable
@@ -100,6 +100,13 @@ define(function(require, exports, module) {
         return this;
     };
 
+    /**
+     * Generate a render spec from the contents of this component.
+     *
+     * @private
+     * @method render
+     * @return {number} Render spec for this component
+     */
     SequentialLayout.prototype.render = function render() {
         var length = 0;
         var girth = 0;

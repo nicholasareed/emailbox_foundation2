@@ -29,7 +29,7 @@ define(function(require, exports, module) {
      *
      * @class Transitionable
      * @constructor
-     * @param {number|Array.<number>|Object.<number|string, number>} start
+     * @param {number|Array.Number|Object.<number|string, number>} start
      *    beginning state
      */
     function Transitionable(start) {
@@ -110,7 +110,7 @@ define(function(require, exports, module) {
      *
      * @method set
      *
-     * @param {number|FamousMatrix|Array.<number>|Object.<number, number>} endState
+     * @param {number|FamousMatrix|Array.Number|Object.<number, number>} endState
      *    end state to which we interpolate
      * @param {transition=} transition object of type {duration: number, curve:
      *    f[0,1] -> [0,1] or name}. If transition is omitted, change will be
@@ -137,7 +137,7 @@ define(function(require, exports, module) {
      *
      * @method reset
      *
-     * @param {number|Array.<number>|Object.<number, number>} startState
+     * @param {number|Array.Number|Object.<number, number>} startState
      *    stable state to set to
      */
     Transitionable.prototype.reset = function reset(startState, startVelocity) {

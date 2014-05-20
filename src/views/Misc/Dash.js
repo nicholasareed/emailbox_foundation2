@@ -14,6 +14,17 @@ define(function(require, exports, module) {
     var Matrix = require('famous/core/Transform');
     var RenderNode         = require('famous/core/RenderNode')
 
+    var MouseSync     = require("famous/inputs/MouseSync");
+    var TouchSync     = require("famous/inputs/TouchSync");
+    var ScrollSync    = require("famous/inputs/ScrollSync");
+    var GenericSync   = require("famous/inputs/GenericSync");
+
+    // Generic syncing
+    GenericSync.register({
+        "mouse"  : MouseSync,
+        "touch"  : TouchSync
+    });
+
     var Utility = require('famous/utilities/Utility');
 
     // Views
@@ -23,15 +34,13 @@ define(function(require, exports, module) {
     var NavigationBar = require('famous/widgets/NavigationBar');
     var GridLayout = require("famous/views/GridLayout");
 
-    var EventHandler = require('famous/core/EventHandler');
-
     // Models
     var mThread = require('models/thread');
 
-    function PageView(options) {
+    function PageView(params) {
         var that = this;
         View.apply(this, arguments);
-        this.options = options;
+        this.params = params;
 
         // create the layout
         this.layout = new HeaderFooterLayout({
@@ -147,10 +156,11 @@ define(function(require, exports, module) {
     PageView.prototype.addThreads = function() {
         var that = this;
 
-        console.log(this.collection.toJSON());
+        // console.log(this.collection.toJSON());
 
         this.collection.toJSON().forEach(function(thread){
             console.log(thread);
+
             var surface = new Surface({
                 content: thread.original.subject,
                 size: [undefined, 50],
@@ -162,14 +172,57 @@ define(function(require, exports, module) {
                     backgroundColor: "white"
                 }
             });
-            surface.Thread = thread;
-            surface.pipe(that.contentScrollView);
-            surface.on('click', function(){
-                // // alert('clicked!');
-                // // alert(this.Setting.href);
-                // Backbone.history.navigate(this.Setting.href, {trigger: true});
+
+            surface.View = new View();
+            surface.View.Thread = thread;
+
+
+            surface.touchSync = new GenericSync({
+                "mouse"  : {},
+                "touch"  : {}
             });
-            that.scrollSurfaces.push(surface);
+            surface.position = new Transitionable([0,0]);
+
+            surface.pipe(surface.touchSync);
+            surface.pipe(that.contentScrollView);
+
+            surface.touchSync.on('update', function(data){
+                var currentPosition = surface.position.get();
+                surface.position.set([
+                    currentPosition[0] + data.delta[0],
+                    currentPosition[1] + data.delta[1]
+                ]);
+            });
+
+            surface.touchSync.on('end', function(data){
+                // transition the position back to [0,0] with a bounce
+                // position.set([0,0], {curve : 'easeOutBounce', duration : 300});
+                var velocity = data.velocity;
+                surface.position.set([0, 0], {
+                    method : 'spring',
+                    period : 150,
+                    velocity : velocity
+                });
+
+            });
+
+            surface.View.positionModifier = new Modifier({
+                transform : function(){
+                    var currentPosition = surface.position.get();
+                    return Transform.translate(currentPosition[0], 0, 0); // currentPosition[1]
+                }
+            });
+
+            surface.View.add(surface.View.positionModifier).add(surface);
+
+            // surface.on('click', function(){
+            //     // // alert('clicked!');
+            //     // // alert(this.Setting.href);
+            //     // Backbone.history.navigate(this.Setting.href, {trigger: true});
+            // });
+
+
+            that.scrollSurfaces.push(surface.View);
         });
 
         that.contentScrollView.sequenceFrom(that.scrollSurfaces);

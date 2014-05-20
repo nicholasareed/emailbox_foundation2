@@ -14,7 +14,7 @@ define(function(require, exports, module) {
 
     /**
      * Builds and renders a scene graph based on a declarative structure definition.
-     * See Scene/example.js in the examples distribution.
+     * See the Scene examples in the examples distribution (http://github.com/Famous/examples.git).
      *
      * @class Scene
      * @constructor

@@ -1,4 +1,4 @@
-Transitions: Famo.us animation library
+Transitions: Famo.us animation library [![Build Status](https://travis-ci.org/Famous/transitions.svg)](https://travis-ci.org/Famous/transitions)
 ======================================
 
 Transitions are used to create animation, usually by providing input to a 
@@ -20,7 +20,7 @@ Modifier.
 - Transitionable.js:  A state maintainer for a smooth transition between 
   numerically-specified states.
 - TransitionableTransform.js:  A class for transitioning the state of a 
-  @link{Transform} by transitioning its translate, scale, skew and rotate 
+  Transform by transitioning its translate, scale, skew and rotate 
   components independently.
 - TweenTransition.js: A state maintainer for a smooth transition between 
   numerically-specified states.
@@ -30,9 +30,9 @@ Modifier.
 
 ## Documentation
 
-- [Transitions][transitions]
+- [Reference Docs][reference-documentation]
+- [Animations][animations]
 - [Pitfalls][pitfalls]
-
 
 ## Maintainer
 
@@ -48,5 +48,7 @@ v. 2.0. If a copy of the MPL was not distributed with this file, You can obtain
 one at http://mozilla.org/MPL/2.0/.
 
 
-[transitions]: http://launch.famo.us/docs/0.1/transitions
-[pitfalls]: http://launch.famo.us/learn/pitfalls
+[reference-documentation]: http://famo.us/docs
+[pitfalls]: http://famo.us/guides/dev/pitfalls.html
+[animations]: http://famo.us/guides/dev/animations.html
+

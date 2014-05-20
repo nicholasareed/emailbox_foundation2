@@ -12,66 +12,85 @@ define(function(require, exports, module) {
 
     /**
      * Handles piped in two-finger touch events to change position via pinching / expanding.
-     *   Outputs an object with position, velocity, touch ids, and distance.
-     *   Especially useful for getting distance between two fingers, as in a pinch-to-zoom event.
-     *   Deltas here represent increases or decreases in distance between fingers.
-     *   Can be used as delegate of GenericSync.
+     *   Emits 'start', 'update' and 'end' events with
+     *   position, velocity, touch ids, and distance between fingers.
      *
      * @class PinchSync
      * @extends TwoFingerSync
      * @constructor
-     * @param {function} legacyGetter position getter object
-     * @param {Object} options options object (Doc: TODO)
+     * @param {Object} options default options overrides
+     * @param {Number} [options.scale] scale velocity by this factor
      */
-    function PinchSync(legacyGetter, options) {
-        if (arguments.length === 2){
-            this._legacyPositionGetter = arguments[0];
-            options = arguments[1];
-        }
-        else {
-            this._legacyPositionGetter = null;
-            options = arguments[0];
-        }
+    function PinchSync(options) {
+        TwoFingerSync.call(this);
 
-        TwoFingerSync.call(this, this._legacyPositionGetter, options);
-        this._dist = undefined;
+        this.options = Object.create(PinchSync.DEFAULT_OPTIONS);
+        if (options) this.setOptions(options);
+
+        this._displacement = 0;
+        this._previousDistance = 0;
     }
 
     PinchSync.prototype = Object.create(TwoFingerSync.prototype);
     PinchSync.prototype.constructor = PinchSync;
 
-    function _calcDist(posA, posB) {
-        var diffX = posB[0] - posA[0];
-        var diffY = posB[1] - posA[1];
-        return Math.sqrt(diffX * diffX + diffY * diffY);
-    }
+    PinchSync.DEFAULT_OPTIONS = {
+        scale : 1
+    };
 
     PinchSync.prototype._startUpdate = function _startUpdate(event) {
-        this._dist = _calcDist(this.posA, this.posB);
-        this.output.emit('start', {
+        this._previousDistance = TwoFingerSync.calculateDistance(this.posA, this.posB);
+        this._displacement = 0;
+
+        this._eventOutput.emit('start', {
             count: event.touches.length,
             touches: [this.touchAId, this.touchBId],
-            distance: this._dist
+            distance: this._dist,
+            center: TwoFingerSync.calculateCenter(this.posA, this.posB)
         });
     };
 
     PinchSync.prototype._moveUpdate = function _moveUpdate(diffTime) {
-        var currDist = _calcDist(this.posA, this.posB);
-        var diffZ = currDist - this._dist;
-        var veloZ = diffZ / diffTime;
+        var currDist = TwoFingerSync.calculateDistance(this.posA, this.posB);
+        var center = TwoFingerSync.calculateCenter(this.posA, this.posB);
 
-        var prevPos = this._legacyPositionGetter ? this._legacyPositionGetter() : 0;
         var scale = this.options.scale;
+        var delta = scale * (currDist - this._previousDistance);
+        var velocity = delta / diffTime;
 
-        this.output.emit('update', {
-            delta : diffZ,
-            position: prevPos + scale*diffZ,
-            velocity: scale*veloZ,
-            touches: [this.touchAId, this.touchBId],
-            distance: currDist
+        this._previousDistance = currDist;
+        this._displacement += delta;
+
+        this._eventOutput.emit('update', {
+            delta : delta,
+            velocity: velocity,
+            distance: currDist,
+            displacement: this._displacement,
+            center: center,
+            touches: [this.touchAId, this.touchBId]
         });
+    };
 
-        this._dist = currDist;
+    /**
+     * Return entire options dictionary, including defaults.
+     *
+     * @method getOptions
+     * @return {Object} configuration options
+     */
+    PinchSync.prototype.getOptions = function getOptions() {
+        return this.options;
+    };
+
+    /**
+     * Set internal options, overriding any default options
+     *
+     * @method setOptions
+     *
+     * @param {Object} [options] overrides of default options
+     * @param {Number} [options.scale] scale velocity by this factor
+     */
+    PinchSync.prototype.setOptions = function setOptions(options) {
+        if (options.scale !== undefined) this.options.scale = options.scale;
     };
 
     module.exports = PinchSync;

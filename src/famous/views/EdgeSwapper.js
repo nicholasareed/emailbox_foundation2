@@ -19,7 +19,7 @@ define(function(require, exports, module) {
      * @class EdgeSwapper
      * @constructor
      * @param {Options} [options] An object of configurable options.
-     * Takes the same options as RenderController.
+     *   Takes the same options as RenderController.
      * @uses RenderController
      */
     function EdgeSwapper(options) {
@@ -45,7 +45,7 @@ define(function(require, exports, module) {
      * Displays the passed-in content with the EdgeSwapper instance's default transition.
      *
      * @method show
-     * @param {Renderable} content The renderable you want to display.
+     * @param {Object} content The renderable you want to display.
      */
     EdgeSwapper.prototype.show = function show(content) {
         // stop sending input to old target
@@ -69,10 +69,26 @@ define(function(require, exports, module) {
         this._controller.setOptions(options);
     };
 
+    /**
+     * Generate a render spec from the contents of this component.
+     *
+     * @private
+     * @method render
+     * @return {number} Render spec for this component
+     */
     EdgeSwapper.prototype.render = function render() {
         return this._entityId;
     };
 
+    /**
+     * Apply changes from this component to the corresponding document element.
+     * This includes changes to classes, styles, size, content, opacity, origin,
+     * and matrix transforms.
+     *
+     * @private
+     * @method commit
+     * @param {Context} context commit context
+     */
     EdgeSwapper.prototype.commit = function commit(context) {
         this._size[0] = context.size[0];
         this._size[1] = context.size[1];

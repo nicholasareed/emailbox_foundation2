@@ -12,42 +12,32 @@ define(function(require, exports, module) {
     var EventHandler = require('famous/core/EventHandler');
 
     /**
-     * Handles piped in touch events. On update it outputs an
-     *   object with position, velocity, acceleration, and touch id. On end
-     *   it outputs an object with position, velocity, count, and touch id.
-     *   Emits 'start', 'update', and 'end' events with payloads including:
-     *   clientX, clientY: passthroughs from DOM event;
-     *   count: number of touches,
-     *   delta: change since last position
-     *   position: accumulated deltas
-     *   velocity: speed of change in pixels per ms
-     *   touch: touch identifier
-
+     * Handles piped in touch events. Emits 'start', 'update', and 'events'
+     *   events with position, velocity, acceleration, and touch id.
+     *   Useful for dealing with inputs on touch devices.
+     *
+     *
      * @class TouchSync
      * @constructor
-     * @param {function} legacyGetter position getter function (deprecated)
-     * @param {Object} options options object (Doc: TODO)
-     * @param {Number} [options.scale] scale outputs in by scalar
-
+     *
+     * @param [options] {Object}             default options overrides
+     * @param [options.direction] {Number}   read from a particular axis
+     * @param [options.rails] {Boolean}      read from axis with greatest differential
+     * @param [options.scale] {Number}       constant factor to scale velocity output
      */
-    function TouchSync(legacyGetter, options) {
-        if (arguments.length === 2){
-            this._legacyPositionGetter = arguments[0];
-            options = arguments[1];
-        }
-        else {
-            this._legacyPositionGetter = null;
-            options = arguments[0];
-        }
+    function TouchSync(options) {
+        this.options =  Object.create(TouchSync.DEFAULT_OPTIONS);
+        if (options) this.setOptions(options);
 
-        this.output = new EventHandler();
-        this.touchTracker = new TouchTracker();
+        this._eventOutput = new EventHandler();
+        this._touchTracker = new TouchTracker();
 
-        this.options = {
-            direction: undefined,
-            rails: false,
-            scale: 1
-        };
+        EventHandler.setOutputHandler(this, this._eventOutput);
+        EventHandler.setInputHandler(this, this._touchTracker);
+
+        this._touchTracker.on('trackstart', _handleStart.bind(this));
+        this._touchTracker.on('trackmove', _handleMove.bind(this));
+        this._touchTracker.on('trackend', _handleEnd.bind(this));
 
         this._payload = {
             delta    : null,
@@ -59,19 +49,19 @@ define(function(require, exports, module) {
             touch    : undefined
         };
 
-        if (options) this.setOptions(options);
-        else this.setOptions(this.options);
-
-        EventHandler.setOutputHandler(this, this.output);
-        EventHandler.setInputHandler(this, this.touchTracker);
-
-        this.touchTracker.on('trackstart', _handleStart.bind(this));
-        this.touchTracker.on('trackmove', _handleMove.bind(this));
-        this.touchTracker.on('trackend', _handleEnd.bind(this));
+        this._position = null; // to be deprecated
     }
 
-    /** @const */ TouchSync.DIRECTION_X = 0;
-    /** @const */ TouchSync.DIRECTION_Y = 1;
+    TouchSync.DEFAULT_OPTIONS = {
+        direction: undefined,
+        rails: false,
+        scale: 1
+    };
+
+    TouchSync.DIRECTION_X = 0;
+    TouchSync.DIRECTION_Y = 1;
+
+    var MINIMUM_TICK_TIME = 8;
 
     function _clearPayload() {
         var payload = this._payload;
@@ -87,69 +77,69 @@ define(function(require, exports, module) {
     function _handleStart(data) {
         _clearPayload.call(this);
 
+        this._position = (this.options.direction !== undefined) ? 0 : [0, 0];
+
         var payload = this._payload;
         payload.count = data.count;
         payload.touch = data.identifier;
 
-        this.output.emit('start', payload);
+        this._eventOutput.emit('start', payload);
     }
 
     // handle 'trackmove'
     function _handleMove(data) {
         var history = data.history;
-        var prevTime = history[history.length - 2].timestamp;
-        var currTime = history[history.length - 1].timestamp;
-        var prevTouch = history[history.length - 2].touch;
-        var currTouch = history[history.length - 1].touch;
 
-        var diffX = currTouch.pageX - prevTouch.pageX;
-        var diffY = currTouch.pageY - prevTouch.pageY;
+        var currHistory = history[history.length - 1];
+        var prevHistory = history[history.length - 2];
+
+        var prevTime = prevHistory.timestamp;
+        var currTime = currHistory.timestamp;
+
+        var diffX = currHistory.x - prevHistory.x;
+        var diffY = currHistory.y - prevHistory.y;
 
         if (this.options.rails) {
             if (Math.abs(diffX) > Math.abs(diffY)) diffY = 0;
             else diffX = 0;
         }
 
-        var diffTime = Math.max(currTime - prevTime, 8); // minimum tick time
+        var diffTime = Math.max(currTime - prevTime, MINIMUM_TICK_TIME);
 
         var velX = diffX / diffTime;
         var velY = diffY / diffTime;
 
         var scale = this.options.scale;
-        var prevPos;
-        var nextPos;
         var nextVel;
         var nextDelta;
 
         if (this.options.direction === TouchSync.DIRECTION_X) {
-            prevPos = this._legacyPositionGetter ? this._legacyPositionGetter() : 0;
             nextDelta = scale * diffX;
-            nextPos = prevPos + nextDelta;
             nextVel = scale * velX;
+            this._position += nextDelta;
         }
         else if (this.options.direction === TouchSync.DIRECTION_Y) {
-            prevPos = this._legacyPositionGetter ? this._legacyPositionGetter() : 0;
             nextDelta = scale * diffY;
-            nextPos = prevPos + nextDelta;
             nextVel = scale * velY;
+            this._position += nextDelta;
         }
         else {
-            prevPos = this._legacyPositionGetter ? this._legacyPositionGetter() : [0,0];
             nextDelta = [scale * diffX, scale * diffY];
-            nextPos = [prevPos[0] + nextDelta[0], prevPos[1] + nextDelta[1]];
             nextVel = [scale * velX, scale * velY];
+            this._position[0] += nextDelta[0];
+            this._position[1] += nextDelta[1];
         }
 
         var payload = this._payload;
         payload.delta    = nextDelta;
-        payload.position = nextPos;
         payload.velocity = nextVel;
-        payload.clientX  = data.touch.clientX;
-        payload.clientY  = data.touch.clientY;
+        payload.position = this._position;
+        payload.clientX  = data.x;
+        payload.clientY  = data.y;
         payload.count    = data.count;
-        payload.touch    = data.touch.identifier;
+        payload.touch    = data.identifier;
 
-        this.output.emit('update', payload);
+        this._eventOutput.emit('update', payload);
     }
 
     // handle 'trackend'
@@ -158,19 +148,21 @@ define(function(require, exports, module) {
         var history = data.history;
         var count = data.count;
         if (history.length > 1) {
-            var prevTime = history[history.length - 2].timestamp;
-            var currTime = history[history.length - 1].timestamp;
-            var prevTouch = history[history.length - 2].touch;
-            var currTouch = history[history.length - 1].touch;
-            var diffX = currTouch.pageX - prevTouch.pageX;
-            var diffY = currTouch.pageY - prevTouch.pageY;
+            var currHistory = history[history.length - 1];
+            var prevHistory = history[history.length - 2];
+
+            var prevTime = prevHistory.timestamp;
+            var currTime = currHistory.timestamp;
+
+            var diffX = currHistory.x - prevHistory.x;
+            var diffY = currHistory.y - prevHistory.y;
 
             if (this.options.rails) {
                 if (Math.abs(diffX) > Math.abs(diffY)) diffY = 0;
                 else diffX = 0;
             }
 
-            var diffTime = Math.max(currTime - prevTime, 1); // minimum tick time
+            var diffTime = Math.max(currTime - prevTime, MINIMUM_TICK_TIME);
             var velX = diffX / diffTime;
             var velY = diffY / diffTime;
             var scale = this.options.scale;
@@ -182,12 +174,12 @@ define(function(require, exports, module) {
 
         var payload = this._payload;
         payload.velocity = nextVel;
-        payload.clientX  = data.clientX;
-        payload.clientY  = data.clientY;
+        payload.clientX  = data.x;
+        payload.clientY  = data.y;
         payload.count    = count;
-        payload.touch    = data.touch.identifier;
+        payload.touch    = data.identifier;
 
-        this.output.emit('end', payload);
+        this._eventOutput.emit('end', payload);
     }
 
     /**
@@ -195,7 +187,10 @@ define(function(require, exports, module) {
      *
      * @method setOptions
      *
-     * @param {Object} [options] overrides of default options.  See constructor.
+     * @param [options] {Object}             default options overrides
+     * @param [options.direction] {Number}   read from a particular axis
+     * @param [options.rails] {Boolean}      read from axis with greatest differential
+     * @param [options.scale] {Number}       constant factor to scale velocity output
      */
     TouchSync.prototype.setOptions = function setOptions(options) {
         if (options.direction !== undefined) this.options.direction = options.direction;

@@ -12,7 +12,7 @@ define(function(require, exports, module) {
 
     /**
      * Rotational drag is a force that opposes angular velocity.
-     * Attach it to a physics body to slow down its rotation.
+     *   Attach it to a physics body to slow down its rotation.
      *
      * @class RotationalDrag
      * @constructor

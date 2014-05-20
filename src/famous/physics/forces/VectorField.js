@@ -13,9 +13,9 @@ define(function(require, exports, module) {
 
     /**
      *  A force that moves a physics body to a location with a spring motion.
-     *  The body can be moved to another physics body, or an anchor point.
+     *    The body can be moved to another physics body, or an anchor point.
      *
-     *  @class Spring
+     *  @class VectorField
      *  @constructor
      *  @extends Force
      *  @param {Object} options options to set on drag

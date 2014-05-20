@@ -20,11 +20,10 @@ define(function(require, exports, module) {
     }
 
     /**
-     * Extremely simple uniform random number generator library wrapping Math.random().
+     * Very simple uniform random number generator library wrapping Math.random().
      *
      * @class Random
      * @static
-     *
      */
     var Random = {};
 
@@ -34,10 +33,10 @@ define(function(require, exports, module) {
      *
      * @method integer
      *
-     * @param {number} min lower bound, default 0
-     * @param {number} max upper bound, default 1
-     * @param {number} dim (optional) dimension of output array, if specified
-     * @return {number | Array.number} random integer, or optionally, an array of random integers
+     * @param {Number} min lower bound, default 0
+     * @param {Number} max upper bound, default 1
+     * @param {Number} dim (optional) dimension of output array, if specified
+     * @return {number | array<number>} random integer, or optionally, an array of random integers
      */
     Random.integer = function integer(min,max,dim) {
         min = (min !== undefined) ? min : 0;
@@ -56,10 +55,10 @@ define(function(require, exports, module) {
      *
      * @method range
      *
-     * @param {number} min lower bound, default 0
-     * @param {number} max upper bound, default 1
-     * @param {number} dim (optional) dimension of output array, if specified
-     * @return {number} random float, or optionally an array
+     * @param {Number} min lower bound, default 0
+     * @param {Number} max upper bound, default 1
+     * @param {Number} [dim] dimension of output array, if specified
+     * @return {Number} random float, or optionally an array
      */
     Random.range = function range(min,max,dim) {
         min = (min !== undefined) ? min : 0;
@@ -77,8 +76,8 @@ define(function(require, exports, module) {
      *
      * @method sign
      *
-     * @param {number} prob probability of returning 1, default 0.5
-     * @return {number} random sign
+     * @param {Number} prob probability of returning 1, default 0.5
+     * @return {Number} random sign (-1 or 1)
      */
     Random.sign = function sign(prob) {
         prob = (prob !== undefined) ? prob : 0.5;
@@ -90,8 +89,8 @@ define(function(require, exports, module) {
      *
      * @method bool
      *
-     * @param {number} prob probability of returning true, default 0.5
-     * @return {boolean} random boolean
+     * @param {Number} prob probability of returning true, default 0.5
+     * @return {Boolean} random boolean
      */
     Random.bool = function bool(prob) {
         prob = (prob !== undefined) ? prob : 0.5;

@@ -12,9 +12,10 @@ define(function(require, exports, module) {
 
     /**
      * Creates a famous surface containing video content. Currently adding
-     * controls and manipulating the video are not supported through the
-     * surface interface, but can be accomplished via standard JavaScript
-     * manipulation of the video DOM element.
+     *   controls and manipulating the video are not supported through the
+     *   surface interface, but can be accomplished via standard JavaScript
+     *   manipulation of the video DOM element.
+     *   This extends the Surface class.
      *
      * @class VideoSurface
      * @extends Surface

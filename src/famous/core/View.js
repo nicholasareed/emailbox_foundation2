@@ -13,12 +13,12 @@ define(function(require, exports, module) {
     var RenderNode = require('./RenderNode');
 
     /**
-     *  Useful for quickly creating elements within applications
-     *  with large event systems.  Consists of a render node paired with an input event handler and an
-     *  output event handler.
+     * Useful for quickly creating elements within applications
+     *   with large event systems.  Consists of a RenderNode paired with
+     *   an input EventHandler and an output EventHandler.
+     *   Meant to be extended by the developer.
      *
      * @class View
-     * @method View
      * @uses EventHandler
      * @uses OptionsManager
      * @uses RenderNode
@@ -77,7 +77,7 @@ define(function(require, exports, module) {
 
     /**
      * Alias for add
-     * @method add
+     * @method _add
      */
     View.prototype._add = View.prototype.add;
 

@@ -15,20 +15,23 @@ define(function(require, exports, module) {
     var SequentialLayout = require('./SequentialLayout');
 
     /**
-     *  A Sequential Layout that can be opened and closed with animations.
+     * A Sequential Layout that can be opened and closed with animations.
+     *
+     *   Takes the same options as SequentialLayout
+     *   as well as options for the open/close transition
+     *   and the rotation you want your Deck instance to layout in.
      *
      * @class Deck
      * @constructor
      * @extends SequentialLayout
      *
-     * @param {Options} [options] An object of configurable options.
-     * Takes the same options as SequentialLayout
-     * as well as options for the open/close transition
-     * and the rotation you want your Deck instance to layout in.
-     * @param {Transition} [transition={duration: 500, curve: 'easeOutBounce'}
-     * The transition that executes upon opening or closing your deck instance.
+     * @param {Options} [options] An object of configurable options
+     * @param {Transition} [options.transition={duration: 500, curve: 'easeOutBounce'}
+     *   The transition that executes upon opening or closing your deck instance.
      * @param {Number} [stackRotation=0] The amount of rotation applied to the propogation
-     * of the Deck instance's stack of renderables.
+     *   of the Deck instance's stack of renderables.
+     * @param {Object} [options.transition] A transition object for changing between states.
+     * @param {Number} [options.direction] axis of expansion (Utility.Direction.X or .Y)
      */
     function Deck(options) {
         SequentialLayout.apply(this, arguments);
@@ -47,7 +50,7 @@ define(function(require, exports, module) {
                     transform: Transform.rotateZ(amount),
                     origin: [0.5, 0.5],
                     target: output
-                }
+                };
             }
             return {
                 transform: positionMatrix,
@@ -55,7 +58,7 @@ define(function(require, exports, module) {
                 target: output
             };
         });
-    };
+    }
     Deck.prototype = Object.create(SequentialLayout.prototype);
     Deck.prototype.constructor = Deck;
 
@@ -72,7 +75,7 @@ define(function(require, exports, module) {
      *
      * @method getSize
      * @return {Array} A two value array of Deck's current width and height (in that order).
-      Scales as Deck opens and closes.
+     *   Scales as Deck opens and closes.
      */
     Deck.prototype.getSize = function getSize() {
         var originalSize = SequentialLayout.prototype.getSize.apply(this, arguments);

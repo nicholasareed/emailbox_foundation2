@@ -15,7 +15,7 @@ define(function(require, exports, module) {
      *   values with scalar-only methods.
      *
      *
-     * @ckass MultipleTransition
+     * @class MultipleTransition
      * @constructor
      *
      * @param {Object} method Transionable class to multiplex
@@ -29,11 +29,11 @@ define(function(require, exports, module) {
     MultipleTransition.SUPPORTS_MULTIPLE = true;
 
     /**
-     * Getter
+     * Get the state of each transition.
      *
      * @method get
      *
-     * @return state {Number|Array}
+     * @return state {Number|Array} state array
      */
     MultipleTransition.prototype.get = function get() {
         for (var i = 0; i < this._instances.length; i++) {
@@ -43,7 +43,7 @@ define(function(require, exports, module) {
     };
 
     /**
-     * Setter
+     * Set the end states with a shared transition, with optional callback.
      *
      * @method set
      *

@@ -13,13 +13,14 @@ define(function(require, exports, module) {
     var RenderController = require('famous/views/RenderController');
 
     /**
-     * A view for transistioning between two surfaces based
+     * A view for transitioning between two surfaces based
      *  on a 'on' and 'off' state
      *
      * @class TabBar
+     * @extends View
      * @constructor
      *
-     * @param {object} options overrides of deault options
+     * @param {object} options overrides of default options
      */
     function ToggleButton(options) {
         this.options = {
@@ -75,7 +76,7 @@ define(function(require, exports, module) {
     };
 
     /**
-     * Transition towards the 'f' state and dispatch an event to
+     * Transition towards the 'off' state and dispatch an event to
      *  listeners to announce it was deselected
      *
      * @method deselect
@@ -144,11 +145,11 @@ define(function(require, exports, module) {
     };
 
     /**
-     * Return the render arbiters render spec
+     * Generate a render spec from the contents of this component.
      *
+     * @private
      * @method render
-     *
-     * @return {object} render spec of the arbiter
+     * @return {number} Render spec for this component
      */
     ToggleButton.prototype.render = function render() {
         return this.arbiter.render();

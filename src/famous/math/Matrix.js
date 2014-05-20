@@ -11,8 +11,7 @@ define(function(require, exports, module) {
     var Vector = require('./Vector');
 
     /**
-     * Create a 3x3 numerical matrix as a two-level array.
-     *   An empty parameter returns an identity matrix.
+     * A library for using a 3x3 numerical matrix, represented as a two-level array.
      *
      * @class Matrix
      * @constructor

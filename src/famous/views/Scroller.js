@@ -7,6 +7,21 @@ define(function(require, exports, module) {
     var ViewSequence = require('famous/core/ViewSequence');
     var EventHandler = require('famous/core/EventHandler');
 
+    /**
+     * Scroller lays out a collection of renderables, and will browse through them based on
+     * accessed position. Scroller also broadcasts an 'edgeHit' event, with a position property of the location of the edge,
+     * when you've hit the 'edges' of it's renderable collection.
+     * @class Scroller
+     * @constructor
+      * @event error
+     * @param {Options} [options] An object of configurable options.
+     * @param {Number} [options.direction=Utility.Direction.Y] Using the direction helper found in the famous Utility
+     * module, this option will lay out the Scroller instance's renderables either horizontally
+     * (x) or vertically (y). Utility's direction is essentially either zero (X) or one (Y), so feel free
+     * to just use integers as well.
+     * @param {Number} [clipSize=undefined] The size of the area (in pixels) that Scroller will display content in.
+     * @param {Number} [margin=undefined] The size of the area (in pixels) that Scroller will process renderables' associated calculations in.
+     */
     function Scroller(options) {
         this.options = Object.create(this.constructor.DEFAULT_OPTIONS);
         this._optionsManager = new OptionsManager(this.options);
@@ -42,7 +57,8 @@ define(function(require, exports, module) {
     Scroller.DEFAULT_OPTIONS = {
         direction: Utility.Direction.Y,
         margin: 0,
-        clipSize: undefined
+        clipSize: undefined,
+        groupScroll: false
     };
 
     function _sizeForDir(size) {
@@ -63,18 +79,40 @@ define(function(require, exports, module) {
         else return _sizeForDir.call(this, this._contextSize);
     }
 
-    Scroller.prototype.getOptions = function getOptions() {
-        return this._optionsManager.getOptions();
-    };
-
+    /**
+     * Patches the Scroller instance's options with the passed-in ones.
+     * @method setOptions
+     * @param {Options} options An object of configurable options for the Scroller instance.
+     */
     Scroller.prototype.setOptions = function setOptions(options) {
-        return this._optionsManager.setOptions(options);
+        this._optionsManager.setOptions(options);
+
+        if (this.options.groupScroll) {
+          this.group.pipe(this._eventOutput);
+        }
+        else {
+          this.group.unpipe(this._eventOutput);
+        }
     };
 
+    /**
+     * Tells you if the Scroller instance is on an edge.
+     * @method onEdge
+     * @return {Boolean} Whether the Scroller instance is on an edge or not.
+     */
     Scroller.prototype.onEdge = function onEdge() {
         return this._onEdge;
     };
 
+    /**
+     * Allows you to overwrite the way Scroller lays out it's renderables. Scroller will
+     * pass an offset into the function. By default the Scroller instance just translates each node
+     * in it's direction by the passed-in offset.
+     * Scroller will translate each renderable down
+     * @method outputFrom
+     * @param {Function} fn A function that takes an offset and returns a transform.
+     * @param {Function} [masterFn]
+     */
     Scroller.prototype.outputFrom = function outputFrom(fn, masterFn) {
         if (!fn) {
             fn = function(offset) {
@@ -88,6 +126,13 @@ define(function(require, exports, module) {
         };
     };
 
+    /**
+     * The Scroller instance's method for reading from an external position. Scroller uses
+     * the external position to actually scroll through it's renderables.
+     * @method positionFrom
+     * @param {Getter} position Can be either a function that returns a position,
+     * or an object with a get method that returns a position.
+     */
     Scroller.prototype.positionFrom = function positionFrom(position) {
         if (position instanceof Function) this._positionGetter = position;
         else if (position && position.get) this._positionGetter = position.get.bind(position);
@@ -98,22 +143,51 @@ define(function(require, exports, module) {
         if (this._positionGetter) this._position = this._positionGetter.call(this);
     };
 
+    /**
+     * Sets the collection of renderables under the Scroller instance's control.
+     *
+     * @method sequenceFrom
+     * @param {Array|ViewSequence} items Either an array of renderables or a Famous viewSequence.
+     * @chainable
+     */
     Scroller.prototype.sequenceFrom = function sequenceFrom(node) {
         if (node instanceof Array) node = new ViewSequence({array: node});
         this._node = node;
         this._positionOffset = 0;
     };
 
+    /**
+     * Returns the width and the height of the Scroller instance.
+     *
+     * @method getSize
+     * @return {Array} A two value array of the Scroller instance's current width and height (in that order).
+     */
     Scroller.prototype.getSize = function getSize(actual) {
         return actual ? this._contextSize : this._size;
     };
 
+    /**
+     * Generate a render spec from the contents of this component.
+     *
+     * @private
+     * @method render
+     * @return {number} Render spec for this component
+     */
     Scroller.prototype.render = function render() {
         if (!this._node) return null;
         if (this._positionGetter) this._position = this._positionGetter.call(this);
         return this._entityId;
     };
 
+    /**
+     * Apply changes from this component to the corresponding document element.
+     * This includes changes to classes, styles, size, content, opacity, origin,
+     * and matrix transforms.
+     *
+     * @private
+     * @method commit
+     * @param {Context} context commit context
+     */
     Scroller.prototype.commit = function commit(context) {
         var transform = context.transform;
         var opacity = context.opacity;
@@ -123,7 +197,8 @@ define(function(require, exports, module) {
         // reset edge detection on size change
         if (!this.options.clipSize && (size[0] !== this._contextSize[0] || size[1] !== this._contextSize[1])) {
             this._onEdge = 0;
-            this._contextSize = size;
+            this._contextSize[0] = size[0];
+            this._contextSize[1] = size[1];
 
             if (this.options.direction === Utility.Direction.X) {
                 this._size[0] = _getClipSize.call(this);
@@ -139,6 +214,7 @@ define(function(require, exports, module) {
 
         return {
             transform: Transform.multiply(transform, scrollTransform),
+            size: size,
             opacity: opacity,
             origin: origin,
             target: this.group.render()

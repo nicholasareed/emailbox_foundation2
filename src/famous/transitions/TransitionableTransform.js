@@ -13,7 +13,7 @@ define(function(require, exports, module) {
     var Utility = require('famous/utilities/Utility');
 
     /**
-     * A class for transitioning the state of a @link{Transform} by transitioning
+     * A class for transitioning the state of a Transform by transitioning
      * its translate, scale, skew and rotate components independently.
      *
      * @class TransitionableTransform
@@ -41,7 +41,7 @@ define(function(require, exports, module) {
     }
 
     /**
-     * An optimized way of setting only the translation component of a @link{Transform}
+     * An optimized way of setting only the translation component of a Transform
      *
      * @method setTranslate
      * @chainable
@@ -61,7 +61,7 @@ define(function(require, exports, module) {
     };
 
     /**
-     * An optimized way of setting only the scale component of a @link{Transform}
+     * An optimized way of setting only the scale component of a Transform
      *
      * @method setTranslate
      * @chainable
@@ -81,7 +81,7 @@ define(function(require, exports, module) {
     };
 
     /**
-     * An optimized way of setting only the rotational component of a @link{Transform}
+     * An optimized way of setting only the rotational component of a Transform
      *
      * @method setTranslate
      * @chainable
@@ -104,7 +104,7 @@ define(function(require, exports, module) {
     };
 
     /**
-     * An optimized way of setting only the skew component of a @link{Transform}
+     * An optimized way of setting only the skew component of a Transform
      *
      * @method setTranslate
      * @chainable
@@ -127,7 +127,7 @@ define(function(require, exports, module) {
 
     /**
      * Setter for a TransitionableTransform with optional parameters to transition
-     * between @link{Transforms}
+     * between Transforms
      *
      * @method setTranslate
      * @chainable
@@ -150,7 +150,7 @@ define(function(require, exports, module) {
     };
 
     /**
-     * Sets the default transition to use for transitioning betwen @link{Transform} states
+     * Sets the default transition to use for transitioning betwen Transform states
      *
      * @method setDefaultTransition
      *
@@ -164,7 +164,7 @@ define(function(require, exports, module) {
     };
 
     /**
-     * Getter. Returns the current state of the @link{Transform}
+     * Getter. Returns the current state of the Transform
      *
      * @method get
      *
@@ -178,7 +178,7 @@ define(function(require, exports, module) {
     };
 
     /**
-     * Get the destination state of the @link{Transform}
+     * Get the destination state of the Transform
      *
      * @method getFinal
      *

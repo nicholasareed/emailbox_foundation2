@@ -16,14 +16,14 @@ define(function(require, exports, module) {
 
     /**
      * A Container surface with a scrollview automatically added. The convenience of ScrollContainer lies in
-     * being able to clip out portions of the associated scrollview that lie outside the boundign surface,
+     * being able to clip out portions of the associated scrollview that lie outside the bounding surface,
      * and in being able to move the scrollview more easily by applying modifiers to the parent container
      * surface.
      * @class ScrollContainer
      * @constructor
      * @param {Options} [options] An object of configurable options.
-     * @param {Options} [surface=undefined] Options for the ScrollContainer instance's surface.
-     * @param {Options} [scrollview={direction:Utility.Direction.X}]  Options for the ScrollContainer instance's scrollview.
+     * @param {Options} [options.container=undefined] Options for the ScrollContainer instance's surface.
+     * @param {Options} [options.scrollview={direction:Utility.Direction.X}]  Options for the ScrollContainer instance's scrollview.
      */
     function ScrollContainer(options) {
         this.options = Object.create(ScrollContainer.DEFAULT_OPTIONS);
@@ -34,7 +34,7 @@ define(function(require, exports, module) {
         this.container = new ContainerSurface(this.options.container);
         this.scrollview = new Scrollview(this.options.scrollview);
 
-        this.surface.add(this.scrollview);
+        this.container.add(this.scrollview);
 
         EventHandler.setInputHandler(this, this.scrollview);
         EventHandler.setOutputHandler(this, this.scrollview);
@@ -68,6 +68,13 @@ define(function(require, exports, module) {
         return this.scrollview.sequenceFrom.apply(this.scrollview, arguments);
     };
 
+    /**
+     * Generate a render spec from the contents of this component.
+     *
+     * @private
+     * @method render
+     * @return {number} Render spec for this component
+     */
     ScrollContainer.prototype.render = function render() {
         return this.container.render.apply(this.container, arguments);
     };

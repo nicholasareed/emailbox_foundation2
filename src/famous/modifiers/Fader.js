@@ -37,8 +37,7 @@ define(function(require, exports, module) {
      *
      * @method setOptions
      *
-     * @param {Object} [options] overrides of default options
-     * @param {Number} [options.foo] TODO
+     * @param {Object} [options] overrides of default options.  See constructor.
      */
     Fader.prototype.setOptions = function setOptions(options) {
         return this._optionsManager.setOptions(options);

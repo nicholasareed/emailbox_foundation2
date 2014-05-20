@@ -11,7 +11,8 @@ define(function(require, exports, module) {
     var Surface = require('famous/core/Surface');
 
     /**
-     *  A Famo.us surface in the form of an HTML input element.
+     * A Famo.us surface in the form of an HTML input element.
+     *   This extends the Surface class.
      *
      * @class InputSurface
      * @extends Surface
@@ -63,7 +64,7 @@ define(function(require, exports, module) {
     /**
      * Blur the current input, hiding the keyboard on mobile.
      *
-     * @method focus
+     * @method blur
      * @return {InputSurface} this, allowing method chaining.
      */
     InputSurface.prototype.blur = function blur() {

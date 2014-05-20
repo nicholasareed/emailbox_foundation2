@@ -16,6 +16,7 @@ define(function(require, exports, module) {
      * A Context designed to contain surfaces and set properties
      *   to be applied to all of them at once.
      *   This is primarily used for specific performance improvements in the rendering engine.
+     *   Private.
      *
      * @private
      * @class Group
@@ -40,10 +41,10 @@ define(function(require, exports, module) {
     Group.prototype.elementClass = 'famous-group';
 
     /**
-     * Add renderables to this component's render tree
+     * Add renderables to this component's render tree.
      *
      * @method add
-     *
+     * @private
      * @param {Object} obj renderable object
      * @return {RenderNode} Render wrapping provided object, if not already a RenderNode
      */

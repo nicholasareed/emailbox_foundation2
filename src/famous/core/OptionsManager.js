@@ -24,11 +24,11 @@ define(function(require, exports, module) {
      *      Objects,
      *      Numbers,
      *      Nested Objects,
-     *      Nested Arrays
+     *      Nested Arrays.
      *
-     *  This excludes:
-     *      Document Fragments,
-     *      Functions
+     *    This excludes:
+     *        Document Fragments,
+     *        Functions
      * @class OptionsManager
      * @constructor
      * @param {Object} value options dictionary
@@ -168,7 +168,7 @@ define(function(require, exports, module) {
 
     /**
      * Unbind an event by type and handler.
-     *   This undoes the work of "on"".
+     *   This undoes the work of "on".
      *
      * @method removeListener
      *
@@ -200,8 +200,8 @@ define(function(require, exports, module) {
      *
      * @method unpipe
      *
-     * @param {EventHandler} target target emitter object
-     * @return {EventHanlder} provided target
+     * @param {EventHandler} target target handler object
+     * @return {EventHandler} provided target
      */
     OptionsManager.prototype.unpipe = function unpipe() {
         _createEventOutput.call(this);

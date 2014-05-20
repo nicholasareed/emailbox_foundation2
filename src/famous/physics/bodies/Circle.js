@@ -12,22 +12,12 @@ define(function(require, exports, module) {
     var Matrix = require('famous/math/Matrix');
 
     /**
-     * @class An elemental circle-shaped Body in the physics engine.
+     * Implements a circle, or spherical, geometry for an Body with
+     * radius.
      *
-     * @description This is a region defined by a radius.
-     *    Its size is the dimension of the bounding square.
-     *
-     *
-     * * Class/Namespace TODOs
-     *
-     * * opts:
-     *    * r: radius
-     *    * inherited opts from: {@link Body}.
-     *
-     * @name Circle
+     * @class Circle
      * @extends Body
      * @constructor
-     * @example TODO
      */
     function Circle(options) {
         options = options || {};
@@ -38,6 +28,11 @@ define(function(require, exports, module) {
     Circle.prototype = Object.create(Body.prototype);
     Circle.prototype.constructor = Circle;
 
+    /**
+     * Basic setter for radius.
+     * @method setRadius
+     * @param r {Number} radius
+     */
     Circle.prototype.setRadius = function setRadius(r) {
         this.radius = r;
         this.size = [2*this.radius, 2*this.radius];
@@ -59,8 +54,6 @@ define(function(require, exports, module) {
             [0, 4 / (m * r * r), 0],
             [0, 0, 2 / (m * r * r)]
         ]);
-
-        this.inverseInertiaTranspose = this.inverseInertia.clone();
     };
 
     module.exports = Circle;

@@ -13,7 +13,7 @@ define(function(require, exports, module) {
 
     /**
      *  A force that moves a physics body to a location with a spring motion.
-     *  The body can be moved to another physics body, or an anchor point.
+     *    The body can be moved to another physics body, or an anchor point.
      *
      *  @class Spring
      *  @constructor
@@ -218,7 +218,7 @@ define(function(require, exports, module) {
 
             if (damping)
                 if (source) force.add(v2.sub(source.velocity).mult(-damping)).put(force);
-                else        force.add(v2.mult(-damping)).put(force);
+                else force.add(v2.mult(-damping)).put(force);
 
             target.applyForce(force);
             if (source) source.applyForce(force.mult(-1));

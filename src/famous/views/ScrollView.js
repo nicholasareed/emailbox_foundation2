@@ -8,19 +8,21 @@
  */
 
 define(function(require, exports, module) {
-    var Utility = require('famous/utilities/Utility');
-
     var PhysicsEngine = require('famous/physics/PhysicsEngine');
     var Particle = require('famous/physics/bodies/Particle');
     var Drag = require('famous/physics/forces/Drag');
     var Spring = require('famous/physics/forces/Spring');
 
-    var GenericSync = require('famous/inputs/GenericSync');
     var EventHandler = require('famous/core/EventHandler');
     var OptionsManager = require('famous/core/OptionsManager');
     var ViewSequence = require('famous/core/ViewSequence');
-
     var Scroller = require('famous/views/Scroller');
+    var Utility = require('famous/utilities/Utility');
+
+    var GenericSync = require('famous/inputs/GenericSync');
+    var ScrollSync = require('famous/inputs/ScrollSync');
+    var TouchSync = require('famous/inputs/TouchSync');
+    GenericSync.register({scroll : ScrollSync, touch : TouchSync});
 
     /**
      * Scrollview will lay out a collection of renderables sequentially in the specified direction, and will
@@ -28,11 +30,11 @@ define(function(require, exports, module) {
      * @class Scrollview
      * @constructor
      * @param {Options} [options] An object of configurable options.
-     * @param {Number} [direction=Utility.Direction.Y] Using the direction helper found in the famous Utility
+     * @param {Number} [options.direction=Utility.Direction.Y] Using the direction helper found in the famous Utility
      * module, this option will lay out the Scrollview instance's renderables either horizontally
      * (x) or vertically (y). Utility's direction is essentially either zero (X) or one (Y), so feel free
      * to just use integers as well.
-     * @param {Boolean} [rails=true] When true, Scrollview's genericSync will only process input in it's primary access.
+     * @param {Boolean} [options.rails=true] When true, Scrollview's genericSync will only process input in it's primary access.
      * @param {Number} [clipSize=undefined] The size of the area (in pixels) that Scrollview will display content in.
      * @param {Number} [margin=undefined] The size of the area (in pixels) that Scrollview will process renderables' associated calculations in.
      * @param {Number} [friction=0.001] Input resistance proportional to the velocity of the input.
@@ -70,7 +72,7 @@ define(function(require, exports, module) {
         this.drag = new Drag({forceFunction: Drag.FORCE_FUNCTIONS.QUADRATIC});
         this.friction = new Drag({forceFunction: Drag.FORCE_FUNCTIONS.LINEAR});
 
-        this.sync = new GenericSync({direction : this.options.direction});
+        this.sync = new GenericSync(['scroll', 'touch'], {direction : this.options.direction});
 
         this._eventInput = new EventHandler();
         this._eventOutput = new EventHandler();
@@ -93,7 +95,7 @@ define(function(require, exports, module) {
         this._scroller = new Scroller();
         this._scroller.positionFrom(this.getPosition.bind(this));
 
-        if (options) this.setOptions(options);
+        this.setOptions(options);
 
         _bindEvents.call(this);
     }
@@ -109,12 +111,14 @@ define(function(require, exports, module) {
         edgeGrip: 0.5,
         edgePeriod: 300,
         edgeDamp: 1,
+        margin: 1000,       // mostly safe
         paginated: false,
         pagePeriod: 500,
         pageDamp: 0.8,
         pageStopSpeed: 10,
         pageSwitchSpeed: 0.5,
-        speedLimit: 10
+        speedLimit: 10,
+        groupScroll: false
     };
 
     /** @enum */
@@ -315,7 +319,7 @@ define(function(require, exports, module) {
 
     /**
      * Returns the position associated with the Scrollview instance's current node
-     * (generally the node currently at the top).
+     *  (generally the node currently at the top).
      * @method getPosition
      * @param {number} [node] If specified, returns the position of the node at that index in the
      * Scrollview instance's currently managed collection.
@@ -329,7 +333,7 @@ define(function(require, exports, module) {
     /**
      * Sets position of the physics particle that controls Scrollview instance's "position"
      * @method setPosition
-     * @param {number} pos The amount of pixels you want your scrollview to progress by.
+     * @param {number} x The amount of pixels you want your scrollview to progress by.
      */
     Scrollview.prototype.setPosition = function setPosition(x) {
         this._particle.setPosition1D(x);
@@ -347,7 +351,7 @@ define(function(require, exports, module) {
 
     /**
      * Sets the Scrollview instance's velocity. Until affected by input or another call of setVelocity
-     * the Scrollview instance will scroll at the passed-in velocity.
+     *  the Scrollview instance will scroll at the passed-in velocity.
      * @method setVelocity
      * @param {number} v TThe magnitude of the velocity.
      */
@@ -361,14 +365,15 @@ define(function(require, exports, module) {
      * @param {Options} options An object of configurable options for the Scrollview instance.
      */
     Scrollview.prototype.setOptions = function setOptions(options) {
-        if (options.direction !== undefined) {
-            if (options.direction === 'x') options.direction = Utility.Direction.X;
-            else if (options.direction === 'y') options.direction = Utility.Direction.Y;
-        }
-        this._scroller.setOptions(options);
-        this._optionsManager.setOptions(options);
+        if (options) {
+            if (options.direction !== undefined) {
+                if (options.direction === 'x') options.direction = Utility.Direction.X;
+                else if (options.direction === 'y') options.direction = Utility.Direction.Y;
+            }
 
-        if (this.options.margin === undefined) this.options.margin = 1000; // mostly safe
+            this._scroller.setOptions(options);
+            this._optionsManager.setOptions(options);
+        }
 
         this.drag.setOptions({strength: this.options.drag});
         this.friction.setOptions({strength: this.options.friction});
@@ -429,12 +434,12 @@ define(function(require, exports, module) {
 
     /**
      * Sets the collection of renderables under the Scrollview instance's control, by
-     * setting its current node to the passed in ViewSequence. If you
-     * pass in an array, the Scrollview instance will set its node as a ViewSequence instantiated with
-     * the passed-in array.
+     *  setting its current node to the passed in ViewSequence. If you
+     *  pass in an array, the Scrollview instance will set its node as a ViewSequence instantiated with
+     *  the passed-in array.
      *
      * @method sequenceFrom
-     * @param {Array|ViewSequence} sequence Either an array of renderables or a Famous viewSequence.
+     * @param {Array|ViewSequence} node Either an array of renderables or a Famous viewSequence.
      */
     Scrollview.prototype.sequenceFrom = function sequenceFrom(node) {
         if (node instanceof Array) node = new ViewSequence({array: node});
@@ -452,6 +457,13 @@ define(function(require, exports, module) {
         return this._scroller.getSize.apply(this._scroller, arguments);
     };
 
+    /**
+     * Generate a render spec from the contents of this component.
+     *
+     * @private
+     * @method render
+     * @return {number} Render spec for this component
+     */
     Scrollview.prototype.render = function render() {
         if (!this._node) return null;
 

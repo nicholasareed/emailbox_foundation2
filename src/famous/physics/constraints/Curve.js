@@ -13,15 +13,19 @@ define(function(require, exports, module) {
 
     /**
      *  A constraint that keeps a physics body on a given implicit curve
-     *  regardless of other physical forces are applied to it.
+     *    regardless of other physical forces are applied to it.
      *
-     *  A curve constraint is two surface constraints in disguise, as a curve is
-     *  the intersection of two surfaces, and is essentially constrained to both
+     *    A curve constraint is two surface constraints in disguise, as a curve is
+     *    the intersection of two surfaces, and is essentially constrained to both
      *
      *  @class Curve
      *  @constructor
      *  @extends Constraint
-     *  @param options {Object}
+     *  @param {Options} [options] An object of configurable options.
+     *  @param {Function} [options.equation] An implicitly defined surface f(x,y,z) = 0 that body is constrained to e.g. function(x,y,z) { x*x + y*y - r*r } corresponds to a circle of radius r pixels
+     *  @param {Function} [options.plane] An implicitly defined second surface that the body is constrained to
+     *  @param {Number} [options.period] The spring-like reaction when the constraint is violated
+     *  @param {Number} [options.number] The damping-like reaction when the constraint is violated
      */
     function Curve(options) {
         this.options = Object.create(Curve.DEFAULT_OPTIONS);
@@ -40,52 +44,14 @@ define(function(require, exports, module) {
     /** @const */ var epsilon = 1e-7;
     /** @const */ var pi = Math.PI;
 
-    /**
-     * @property Curve.DEFAULT_OPTIONS
-     * @type Object
-     * @protected
-     * @static
-     */
     Curve.DEFAULT_OPTIONS = {
-
-        /**
-         * An implicitly defined surface f(x,y,z) = 0 that body is constrained to
-         *   e.g. function(x,y,z) { x*x + y*y - r*r }
-         *   corresponds to a circle of radius r pixels
-         *
-         * @attribute equation
-         * @type Function
-         */
         equation  : function(x,y,z) {
             return 0;
         },
-
-        /**
-         * An implicitly defined second surface that the body is constrained to
-         *
-         * @attribute path
-         * @type Function
-         * @default the xy-plane
-         * @optional
-         */
         plane : function(x,y,z) {
             return z;
         },
-
-        /**
-         * The spring-like reaction when the constraint is violated
-         * @attribute period
-         * @type Number
-         * @default 0
-         */
         period : 0,
-
-        /**
-         * The damping-like reaction when the constraint is violated
-         * @attribute dampingRatio
-         * @type Number
-         * @default 0
-         */
         dampingRatio : 0
     };
 
@@ -124,16 +90,19 @@ define(function(require, exports, module) {
             var p = body.position;
             var m = body.mass;
 
+            var gamma;
+            var beta;
+
             if (period === 0) {
-                var gamma = 0;
-                var beta = 1;
+                gamma = 0;
+                beta = 1;
             }
             else {
                 var c = 4 * m * pi * dampingRatio / period;
                 var k = 4 * m * pi * pi / (period * period);
 
-                var gamma = 1 / (c + dt*k);
-                var beta  = dt*k / (c + dt*k);
+                gamma = 1 / (c + dt*k);
+                beta  = dt*k / (c + dt*k);
             }
 
             var x = p.x;

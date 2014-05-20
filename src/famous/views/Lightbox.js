@@ -8,32 +8,33 @@ define(function(require, exports, module) {
     var TransitionableTransform = require('famous/transitions/TransitionableTransform');
 
     /**
-     * Lightbox , using transitions, shows and hides different renderables. Lightbox can essentially be
+     * Lightbox, using transitions, shows and hides different renderables. Lightbox can essentially be
      * thought of as RenderController with a stateful implementation and interface.
+     *
      * @class Lightbox
      * @constructor
      * @param {Options} [options] An object of configurable options.
-     * @param {Transform} [inTransform] The transform at the start of transitioning in a shown renderable.
-     * @param {Transform} [outTransform] The transform at the end of transitioning out a renderable.
-     * @param {Transform} [showTransform] The transform applied to your shown renderable in its state of equilibrium.
-     * @param {Number} [inOpacity] A number between one and zero that defines the state of a shown renderables opacity upon initially
+     * @param {Transform} [options.inTransform] The transform at the start of transitioning in a shown renderable.
+     * @param {Transform} [options.outTransform] The transform at the end of transitioning out a renderable.
+     * @param {Transform} [options.showTransform] The transform applied to your shown renderable in its state of equilibrium.
+     * @param {Number} [options.inOpacity] A number between one and zero that defines the state of a shown renderables opacity upon initially
      * being transitioned in.
-     * @param {Number} [outOpacity] A number between one and zero that defines the state of a shown renderables opacity upon being
+     * @param {Number} [options.outOpacity] A number between one and zero that defines the state of a shown renderables opacity upon being
      * fully transitioned out.
-     * @param {Number} [showOpacity] A number between one and zero that defines the state of a shown renderables opacity
+     * @param {Number} [options.showOpacity] A number between one and zero that defines the state of a shown renderables opacity
      * once succesfully transitioned in.
-     * @param {Array<Number>} [inOrigin] A two value array of numbers between one and zero that defines the state of a shown renderables
+     * @param {Array<Number>} [options.inOrigin] A two value array of numbers between one and zero that defines the state of a shown renderables
      * origin upon intially being transitioned in.
-     * @param {Array<Number>} [outOrigin] A two value array of numbers between one and zero that defines the state of a shown renderable
+     * @param {Array<Number>} [options.outOrigin] A two value array of numbers between one and zero that defines the state of a shown renderable
      * once fully hidden.
-     * @param {Array<Number>} [showOrigin] A two value array of numbers between one and zero that defines the state of a shown renderables
+     * @param {Array<Number>} [options.showOrigin] A two value array of numbers between one and zero that defines the state of a shown renderables
      * origin upon succesfully being shown.
-     * @param {Transition} [inTransition=true] The transition in charge of showing a renderable.
-     * @param {Transition} [outTransition=true]  The transition in charge of removing your previous renderable when
+     * @param {Transition} [options.inTransition=true] The transition in charge of showing a renderable.
+     * @param {Transition} [options.outTransition=true]  The transition in charge of removing your previous renderable when
      * you show a new one, or hiding your current renderable.
-     * @param {Boolean} [overlap=false] When showing a new renderable, overlap determines if the
-      out transition of the old one executes concurrently with the in transition of the new one,
-       or synchronously beforehand.
+     * @param {Boolean} [options.overlap=false] When showing a new renderable, overlap determines if the
+     *   out transition of the old one executes concurrently with the in transition of the new one,
+      *  or synchronously beforehand.
      */
     function Lightbox(options) {
         this.options = Object.create(Lightbox.DEFAULT_OPTIONS);
@@ -74,10 +75,10 @@ define(function(require, exports, module) {
 
    /**
      * Show displays the targeted renderable with a transition and an optional callback to
-     * execute afterwards.
+     *  execute afterwards.
      * @method show
-     * @param {Renderable} renderable The renderable you want to show.
-     * @param {Transition} [Transition] Overwrites the default transition in to display the
+     * @param {Object} renderable The renderable you want to show.
+     * @param {Transition} [transition] Overwrites the default transition in to display the
      * passed-in renderable.
      * @param {function} [callback] Executes after transitioning in the renderable.
      */
@@ -94,8 +95,7 @@ define(function(require, exports, module) {
         if (this._showing) {
             if (this.options.overlap) this.hide();
             else {
-                this.hide(this.show.bind(this, renderable, callback));
-                return;
+                return this.hide(this.show.bind(this, renderable, transition, callback));
             }
         }
         this._showing = true;
@@ -128,7 +128,7 @@ define(function(require, exports, module) {
     /**
      * Hide hides the currently displayed renderable with an out transition.
      * @method hide
-     * @param {Transition} [Transition] Overwrites the default transition in to hide the
+     * @param {Transition} [transition] Overwrites the default transition in to hide the
      * currently controlled renderable.
      * @param {function} [callback] Executes after transitioning out the renderable.
      */
@@ -157,6 +157,13 @@ define(function(require, exports, module) {
         stateItem.origin.set(this.options.outOrigin, transition, _cb);
     };
 
+    /**
+     * Generate a render spec from the contents of this component.
+     *
+     * @private
+     * @method render
+     * @return {number} Render spec for this component
+     */
     Lightbox.prototype.render = function render() {
         var result = [];
         for (var i = 0; i < this.nodes.length; i++) {

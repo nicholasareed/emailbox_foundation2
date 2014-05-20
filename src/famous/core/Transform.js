@@ -10,22 +10,24 @@
 define(function(require, exports, module) {
 
     /**
-     *  A high-performance matrix math library used to calculate
-     *  affine transforms on surfaces and other renderables.
-     *  Famo.us uses 4x4 matrices corresponding directly to
-     *  WebKit matrices (column-major order)
+     *  A high-performance static matrix math library used to calculate
+     *    affine transforms on surfaces and other renderables.
+     *    Famo.us uses 4x4 matrices corresponding directly to
+     *    WebKit matrices (column-major order).
      *
-     *  The internal "type" of a Matrix is a 16-long float array in
-     *  row-major order, with:
-     *  elements [0],[1],[2],[4],[5],[6],[8],[9],[10] forming the 3x3
+     *    The internal "type" of a Matrix is a 16-long float array in
+     *    row-major order, with:
+     *    elements [0],[1],[2],[4],[5],[6],[8],[9],[10] forming the 3x3
      *          transformation matrix;
-     *  elements [12], [13], [14] corresponding to the t_x, t_y, t_z
+     *    elements [12], [13], [14] corresponding to the t_x, t_y, t_z
      *           translation;
-     *  elements [3], [7], [11] set to 0;
-     *  element [15] set to 1.
+     *    elements [3], [7], [11] set to 0;
+     *    element [15] set to 1.
+     *    All methods are static.
+     *
      * @static
      *
-     * @namespace Transform
+     * @class Transform
      */
     var Transform = {};
 
@@ -99,13 +101,12 @@ define(function(require, exports, module) {
      * Return a Transform translated by additional amounts in each
      *    dimension. This is equivalent to the result of
      *
-     *    Matrix.multiply(Matrix.translate(t[0], t[1], t[2]), m)
+     *    Matrix.multiply(Matrix.translate(t[0], t[1], t[2]), m).
      *
      * @method thenMove
      * @static
      * @param {Transform} m a matrix
-     * @param {Array.Number} t delta vector (array of floats &&
-     *    array.length == 2 || 3)
+     * @param {Array.Number} t floats delta vector of length 2 or 3
      * @return {Transform} the resulting translated matrix
      */
     Transform.thenMove = function thenMove(m, t) {
@@ -118,7 +119,7 @@ define(function(require, exports, module) {
      *    applied after a move. This is faster than the equivalent multiply.
      *    This is equivalent to the result of:
      *
-     *    Transform.multiply(m, Transform.translate(t[0], t[1], t[2]))
+     *    Transform.multiply(m, Transform.translate(t[0], t[1], t[2])).
      *
      * @method moveThen
      * @static
@@ -140,9 +141,9 @@ define(function(require, exports, module) {
      *
      * @method translate
      * @static
-     * @param {Number} x x translation (delta_x)
-     * @param {Number} y y translation (delta_y)
-     * @param {Number} z z translation (delta_z)
+     * @param {Number} x x translation
+     * @param {Number} y y translation
+     * @param {Number} z z translation
      * @return {Transform} the resulting matrix
      */
     Transform.translate = function translate(x, y, z) {
@@ -154,7 +155,7 @@ define(function(require, exports, module) {
      * Return a Transform scaled by a vector in each
      *    dimension. This is a more performant equivalent to the result of
      *
-     *    Transform.multiply(Transform.scale(s[0], s[1], s[2]), m)
+     *    Transform.multiply(Transform.scale(s[0], s[1], s[2]), m).
      *
      * @method thenScale
      * @static
@@ -189,7 +190,7 @@ define(function(require, exports, module) {
     };
 
     /**
-     * Return a Transform which represents a specified clockwise
+     * Return a Transform which represents a clockwise
      *    rotation around the x axis.
      *
      * @method rotateX
@@ -204,7 +205,7 @@ define(function(require, exports, module) {
     };
 
     /**
-     * Return a Transform which represents a specified clockwise
+     * Return a Transform which represents a clockwise
      *    rotation around the y axis.
      *
      * @method rotateY
@@ -219,7 +220,7 @@ define(function(require, exports, module) {
     };
 
     /**
-     * Return a Transform which represents a specified clockwise
+     * Return a Transform which represents a clockwise
      *    rotation around the z axis.
      *
      * @method rotateZ
@@ -236,7 +237,7 @@ define(function(require, exports, module) {
     /**
      * Return a Transform which represents composed clockwise
      *    rotations along each of the axes. Equivalent to the result of
-     *    multiply(rotateX(phi), rotateY(theta), rotateZ(psi))
+     *    Matrix.multiply(rotateX(phi), rotateY(theta), rotateZ(psi)).
      *
      * @method rotate
      * @static
@@ -360,8 +361,8 @@ define(function(require, exports, module) {
 
     /**
      * Return inverse affine matrix for given Transform.
-     * Note: This assumes m[3] = m[7] = m[11] = 0, and m[15] = 1.
-     * Will provide incorrect results if not invertable or preconditions not met.
+     *   Note: This assumes m[3] = m[7] = m[11] = 0, and m[15] = 1.
+     *   Will provide incorrect results if not invertible or preconditions not met.
      *
      * @method inverse
      * @static
@@ -417,7 +418,7 @@ define(function(require, exports, module) {
 
     /**
      * Decompose Transform into separate .translate, .rotate, .scale,
-     *    .skew components.
+     *    and .skew components.
      *
      * @method interpret
      * @static
@@ -567,7 +568,7 @@ define(function(require, exports, module) {
 
     /**
      * Determine if two Transforms are component-wise equal
-     * Warning: breaks on perspective Transforms
+     *   Warning: breaks on perspective Transforms
      *
      * @method equals
      * @static
@@ -581,7 +582,7 @@ define(function(require, exports, module) {
 
     /**
      * Determine if two Transforms are component-wise unequal
-     * Warning: breaks on perspective Transforms
+     *   Warning: breaks on perspective Transforms
      *
      * @method notEquals
      * @static
@@ -636,7 +637,7 @@ define(function(require, exports, module) {
     };
 
     /**
-     * Array defining a translation forward in z by 1
+     * (Property) Array defining a translation forward in z by 1
      *
      * @property {array} inFront
      * @static
@@ -645,7 +646,7 @@ define(function(require, exports, module) {
     Transform.inFront = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1e-3, 1];
 
     /**
-     * Array defining a translation backwards in z by 1
+     * (Property) Array defining a translation backwards in z by 1
      *
      * @property {array} behind
      * @static

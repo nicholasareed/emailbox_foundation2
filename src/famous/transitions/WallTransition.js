@@ -16,9 +16,9 @@ define(function(require, exports, module) {
 
     /**
      * WallTransition is a method of transitioning between two values (numbers,
-     * or arrays of numbers) with a bounce. Unlike a @link{SpringTransition}
-     * The transition will not overshoot the target, but bounce back against it.
-     * The behavior of the bounce is specified by the transition options.
+     *   or arrays of numbers) with a bounce. Unlike a SpringTransition
+     *   The transition will not overshoot the target, but bounce back against it.
+     *   The behavior of the bounce is specified by the transition options.
      *
      * @class WallTransition
      * @constructor
@@ -270,7 +270,7 @@ define(function(require, exports, module) {
     };
 
     /**
-     * Setter
+     * Set the end position and transition, with optional callback on completion.
      *
      * @method set
      *

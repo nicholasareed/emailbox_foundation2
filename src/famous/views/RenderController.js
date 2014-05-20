@@ -72,10 +72,10 @@ define(function(require, exports, module) {
 
     /**
      * As your RenderController shows a new renderable, it executes a transition in. This transition in
-     * will affect a default interior state and modify it as you bring renderables in and out. However, if you want to control
-     * the transform, opacity, and origin state yourself, you may call certain methods (such as inTransformFrom) to obtain state from an outside source,
-     * that may either be a function or a Famous transitionable. inTransformFrom sets the accessor for the state of
-     * the transform used in transitioning in renderables.
+     *  will affect a default interior state and modify it as you bring renderables in and out. However, if you want to control
+     *  the transform, opacity, and origin state yourself, you may call certain methods (such as inTransformFrom) to obtain state from an outside source,
+     *  that may either be a function or a Famous transitionable. inTransformFrom sets the accessor for the state of
+     *  the transform used in transitioning in renderables.
      *
      * @method inTransformFrom
      * @param {Function|Transitionable} transform  A function that returns a transform from outside closure, or a
@@ -169,8 +169,8 @@ define(function(require, exports, module) {
      * Show displays the targeted renderable with a transition and an optional callback to
      * execute afterwards.
      * @method show
-     * @param {Renderable} renderable The renderable you want to show.
-     * @param {Transition} [Transition] Overwrites the default transition in to display the
+     * @param {Object} renderable The renderable you want to show.
+     * @param {Transition} [transition] Overwrites the default transition in to display the
      * passed-in renderable.
      * @param {function} [callback] Executes after transitioning in the renderable.
      * @chainable
@@ -186,7 +186,7 @@ define(function(require, exports, module) {
         }
 
         if (this._showing >= 0) {
-            if (this.options.overlap) this.hide(callback);
+            if (this.options.overlap) this.hide();
             else {
                 if (this._nextRenderable) {
                     this._nextRenderable = renderable;
@@ -198,7 +198,7 @@ define(function(require, exports, module) {
                         this._nextRenderable = null;
                     });
                 }
-                return;
+                return undefined;
             }
         }
 
@@ -239,7 +239,7 @@ define(function(require, exports, module) {
     /**
      * Hide hides the currently displayed renderable with an out transition.
      * @method hide
-     * @param {Transition} [Transition] Overwrites the default transition in to hide the
+     * @param {Transition} [transition] Overwrites the default transition in to hide the
      * currently controlled renderable.
      * @param {function} [callback] Executes after transitioning out the renderable.
      * @chainable
@@ -282,6 +282,13 @@ define(function(require, exports, module) {
         }.bind(this, node, modifier, state, renderable));
     };
 
+    /**
+     * Generate a render spec from the contents of this component.
+     *
+     * @private
+     * @method render
+     * @return {number} Render spec for this component
+     */
     RenderController.prototype.render = function render() {
         var result = this._output;
         if (result.length > this._nodes.length) result.splice(this._nodes.length);

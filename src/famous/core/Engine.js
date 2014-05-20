@@ -13,13 +13,13 @@ define(function(require, exports, module) {
      * The singleton object initiated upon process
      *   startup which manages all active Context instances, runs
      *   the render dispatch loop, and acts as a listener and dispatcher
-     *   for events.
+     *   for events.  All methods are therefore static.
      *
-     * On static initialization, window.requestAnimationFrame is called with
-     *   the event loop function, step().
+     *   On static initialization, window.requestAnimationFrame is called with
+     *     the event loop function.
      *
-     * Note: Any window in which Engine runs will prevent default
-     *   scrolling behavior on the 'touchmove' event.
+     *   Note: Any window in which Engine runs will prevent default
+     *     scrolling behavior on the 'touchmove' event.
      *
      * @static
      * @class Engine
@@ -63,7 +63,6 @@ define(function(require, exports, module) {
      * @static
      * @private
      * @method step
-     *
      */
     Engine.step = function step() {
         var currentTime = Date.now();
@@ -109,14 +108,6 @@ define(function(require, exports, module) {
     // @param {Object=} event document event
     //
     function handleResize(event) {
-        if (document.activeElement && document.activeElement.nodeName === 'INPUT') {
-            document.activeElement.addEventListener('blur', function deferredResize() {
-                this.removeEventListener('blur', deferredResize);
-                handleResize(event);
-            });
-            return;
-        }
-        window.scrollTo(0, 0);
         for (var i = 0; i < contexts.length; i++) {
             contexts[i].emit('resize');
         }
@@ -127,9 +118,6 @@ define(function(require, exports, module) {
 
     // prevent scrolling via browser
     window.addEventListener('touchmove', function(event) {
-        // if(!App.Cache.touchmove){
-        //     event.preventDefault();
-        // }
         event.preventDefault();
     }, true);
 
@@ -148,12 +136,12 @@ define(function(require, exports, module) {
 
     /**
      * Remove handler object from set of downstream handlers.
-     * Undoes work of "pipe"
+     *   Undoes work of "pipe".
      *
      * @method unpipe
      *
-     * @param {EventHandler} target target emitter object
-     * @return {EventHanlder} provided target
+     * @param {EventHandler} target target handler object
+     * @return {EventHandler} provided target
      */
     Engine.unpipe = function unpipe(target) {
         if (target.unsubscribe instanceof Function) return target.unsubscribe(Engine);
@@ -173,7 +161,14 @@ define(function(require, exports, module) {
     Engine.on = function on(type, handler) {
         if (!(type in eventForwarders)) {
             eventForwarders[type] = eventHandler.emit.bind(eventHandler, type);
-            document.body.addEventListener(type, eventForwarders[type]);
+            if (document.body) {
+                document.body.addEventListener(type, eventForwarders[type]);
+            }
+            else {
+                Engine.nextTick(function(type, forwarder) {
+                    document.body.addEventListener(type, forwarder);
+                }.bind(this, type, eventForwarders[type]));
+            }
         }
         return eventHandler.on(type, handler);
     };
@@ -194,7 +189,7 @@ define(function(require, exports, module) {
 
     /**
      * Unbind an event by type and handler.
-     *   This undoes the work of "on"".
+     *   This undoes the work of "on".
      *
      * @static
      * @method removeListener
@@ -234,7 +229,7 @@ define(function(require, exports, module) {
     };
 
     /**
-     * Return engine options
+     * Return engine options.
      *
      * @static
      * @method getOptions
@@ -253,7 +248,9 @@ define(function(require, exports, module) {
      *
      * @param {Object} [options] overrides of default options
      * @param {Number} [options.fpsCap]  maximum fps at which the system should run
-     * @param {boolean} [options.runLoop] whether the run loop should continue
+     * @param {boolean} [options.runLoop=true] whether the run loop should continue
+     * @param {string} [options.containerType="div"] type of container element.  Defaults to 'div'.
+     * @param {string} [options.containerClass="famous-container"] type of container element.  Defaults to 'famous-container'.
      */
     Engine.setOptions = function setOptions(options) {
         return optionsManager.setOptions.apply(optionsManager, arguments);
@@ -267,21 +264,24 @@ define(function(require, exports, module) {
      * @static
      * @method createContext
      *
-     * @param {Node} el Top of document tree
+     * @param {Node} el will be top of Famo.us document element tree
      * @return {Context} new Context within el
      */
     Engine.createContext = function createContext(el) {
-        if (el === undefined) {
+        var needMountContainer = false;
+        if (!el) {
             el = document.createElement(options.containerType);
             el.classList.add(options.containerClass);
-            document.body.appendChild(el);
-        }
-        else if (!(el instanceof Element)) {
-            el = document.createElement(options.containerType);
-            throw new Error('Tried to create context on non-existent element');
+            needMountContainer = true;
         }
         var context = new Context(el);
         Engine.registerContext(context);
+        if (needMountContainer) {
+            Engine.nextTick(function(context, el) {
+                document.body.appendChild(el);
+                context.emit('resize');
+            }.bind(this, context, el));
+        }
         return context;
     };
 

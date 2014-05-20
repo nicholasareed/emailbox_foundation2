@@ -30,7 +30,7 @@ define(function(require, exports, module) {
     /**
      * Set switch to this mode, passing events to the corresponding
      *   EventHandler.  If mode has changed, emits 'change' event,
-     *   emits 'unpipe' event to the old mode's handler and a 'pipe'
+     *   emits 'unpipe' event to the old mode's handler, and emits 'pipe'
      *   event to the new mode's handler.
      *
      * @method setMode
@@ -56,7 +56,7 @@ define(function(require, exports, module) {
      *
      * @param {string | number} mode mode to which this eventHandler corresponds
      *
-     * @return {EventHandler} eventHandler behind this mode's "switch"
+     * @return {EventHandler} eventHandler corresponding to this mode
      */
     EventArbiter.prototype.forMode = function forMode(mode) {
         if (!this.dispatchers[mode]) this.dispatchers[mode] = new EventHandler();

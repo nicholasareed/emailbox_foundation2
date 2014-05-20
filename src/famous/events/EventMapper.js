@@ -47,6 +47,7 @@ define(function(require, exports, module) {
 
     /**
      * Alias of emit.
+     * @method trigger
      */
     EventMapper.prototype.trigger = EventMapper.prototype.emit;
 

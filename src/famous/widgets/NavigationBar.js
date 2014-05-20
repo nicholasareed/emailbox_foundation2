@@ -14,14 +14,15 @@ define(function(require, exports, module) {
     var View = require('famous/core/View');
 
     /**
-     * A view for display for displaying the title of the current page
+     * A view for displaying the title of the current page
      *  as well as icons for navigating backwards and opening
      *  further options
      *
      * @class NavigationBar
+     * @extends View
      * @constructor
      *
-     * @param {object} [options] overrides of deault options
+     * @param {object} [options] overrides of default options
      * @param {Array.number} [options.size=(undefined,0.5)] Size of the navigation bar and it's componenets.
      * @param {Array.string} [options.backClasses=(back)] CSS Classes attached to back of Navigation.
      * @param {String} [options.backContent=(&#x25c0;)] Content of the back button.
@@ -83,7 +84,7 @@ define(function(require, exports, module) {
             var key = event.id;
             var data = event.value;
             if (key === 'size') {
-                this.layout.id['master'].setSize(data);
+                this.layout.id.master.setSize(data);
                 this.title.setSize(data);
                 this.back.setSize([data[1], data[1]]);
                 this.more.setSize([data[1], data[1]]);

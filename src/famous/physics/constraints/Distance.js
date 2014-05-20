@@ -15,10 +15,17 @@ define(function(require, exports, module) {
      *  A constraint that keeps a physics body a given distance away from a given
      *  anchor, or another attached body.
      *
+     *
      *  @class Distance
      *  @constructor
      *  @extends Constraint
-     *  @param options {Object}
+     *  @param {Options} [options] An object of configurable options.
+     *  @param {Array} [options.anchor] The location of the anchor
+     *  @param {Number} [options.length] The amount of distance from the anchor the constraint should enforce
+     *  @param {Number} [options.minLength] The minimum distance before the constraint is activated. Use this property for a "rope" effect.
+     *  @param {Number} [options.period] The spring-like reaction when the constraint is broken.
+     *  @param {Number} [options.dampingRatio] The damping-like reaction when the constraint is broken.
+     *
      */
     function Distance(options) {
         this.options = Object.create(this.constructor.DEFAULT_OPTIONS);
@@ -36,56 +43,11 @@ define(function(require, exports, module) {
     Distance.prototype = Object.create(Constraint.prototype);
     Distance.prototype.constructor = Distance;
 
-    /**
-     * @property Distance.DEFAULT_OPTIONS
-     * @type Object
-     * @protected
-     * @static
-     */
     Distance.DEFAULT_OPTIONS = {
-
-        /**
-         * The location of the anchor
-         *
-         * @attribute anchor
-         * @type Array
-         * @optional
-         */
         anchor : null,
-
-        /**
-         * The amount of distance from the anchor the constraint should enforce
-         *
-         * @attribute length
-         * @type Number
-         * @default 0
-         */
         length : 0,
-
-        /**
-         * The minimum distance before the constraint is activated
-         *    Use this property for a "rope" effect
-         *
-         * @attribute length
-         * @type Number
-         * @default 0
-         */
         minLength : 0,
-
-        /**
-         * The spring-like reaction when the constraint is broken
-         * @attribute period
-         * @type Number
-         * @default 0
-         */
         period : 0,
-
-        /**
-         * The damping-like reaction when the constraint is broken
-         * @attribute dampingRatio
-         * @type Number
-         * @default 0
-         */
         dampingRatio : 0
     };
 
@@ -143,14 +105,17 @@ define(function(require, exports, module) {
         var period       = options.period;
         var minLength    = options.minLength;
 
+        var p2;
+        var w2;
+
         if (source) {
-            var p2 = source.position;
-            var w2 = source.inverseMass;
             var v2 = source.velocity;
+            p2 = source.position;
+            w2 = source.inverseMass;
         }
         else {
-            var p2 = this.options.anchor;
-            var w2 = 0;
+            p2 = this.options.anchor;
+            w2 = 0;
         }
 
         var length = this.options.length;
@@ -171,20 +136,22 @@ define(function(require, exports, module) {
             if (Math.abs(dist) < minLength) return;
 
             if (source) diffV.set(v1.sub(v2));
-            else        diffV.set(v1);
+            else diffV.set(v1);
 
             var effMass = 1 / (w1 + w2);
+            var gamma;
+            var beta;
 
             if (period === 0) {
-                var gamma = 0;
-                var beta  = 1;
+                gamma = 0;
+                beta  = 1;
             }
             else {
                 var c = 4 * effMass * pi * dampingRatio / period;
                 var k = 4 * effMass * pi * pi / (period * period);
 
-                var gamma = 1 / (c + dt*k);
-                var beta  = dt*k / (c + dt*k);
+                gamma = 1 / (c + dt*k);
+                beta  = dt*k / (c + dt*k);
             }
 
             var antiDrift = beta/dt * dist;

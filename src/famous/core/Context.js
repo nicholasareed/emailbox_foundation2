@@ -22,13 +22,13 @@ define(function(require, exports, module) {
 
     /**
      * The top-level container for a Famous-renderable piece of the document.
-     * It is directly updated by the process-wide Engine object, and manages one
-     * render tree root, which can contain other renderables.
+     *   It is directly updated by the process-wide Engine object, and manages one
+     *   render tree root, which can contain other renderables.
      *
      * @class Context
      * @constructor
      * @private
-     * @param {Node} container Element in which Famo.us content will be inserted
+     * @param {Node} container Element in which content will be inserted
      */
     function Context(container) {
         this.container = container;
@@ -46,6 +46,7 @@ define(function(require, exports, module) {
             transform: Transform.identity,
             opacity: 1,
             origin: _originZeroZero,
+            align: null,
             size: this._size
         };
 
@@ -55,7 +56,7 @@ define(function(require, exports, module) {
 
     }
 
-    // TODO: Deprecate this, unused.
+    // Note: Unused
     Context.prototype.getAllocator = function getAllocator() {
         return this._allocator;
     };
@@ -86,7 +87,7 @@ define(function(require, exports, module) {
     };
 
     /**
-     * Gets viewport size for Context
+     * Gets viewport size for Context.
      *
      * @method getSize
      *
@@ -97,7 +98,7 @@ define(function(require, exports, module) {
     };
 
     /**
-     * Sets viewport size for Context
+     * Sets viewport size for Context.
      *
      * @method setSize
      *
@@ -121,6 +122,7 @@ define(function(require, exports, module) {
             if (contextParameters.transform) this._nodeContext.transform = contextParameters.transform;
             if (contextParameters.opacity) this._nodeContext.opacity = contextParameters.opacity;
             if (contextParameters.origin) this._nodeContext.origin = contextParameters.origin;
+            if (contextParameters.align) this._nodeContext.align = contextParameters.align;
             if (contextParameters.size) this._nodeContext.size = contextParameters.size;
         }
         var perspective = this._perspectiveState.get();
@@ -146,7 +148,7 @@ define(function(require, exports, module) {
     /**
      * Set current perspective of this context in pixels.
      *
-     * @method getPerspective
+     * @method setPerspective
      * @param {Number} perspective in pixels
      * @param {Object} [transition] Transitionable object for applying the change
      * @param {function(Object)} callback function called on completion of transition
@@ -184,7 +186,7 @@ define(function(require, exports, module) {
 
     /**
      * Unbind an event by type and handler.
-     *   This undoes the work of "on"".
+     *   This undoes the work of "on".
      *
      * @method removeListener
      *
@@ -210,12 +212,12 @@ define(function(require, exports, module) {
 
     /**
      * Remove handler object from set of downstream handlers.
-     * Undoes work of "pipe"
+     *   Undoes work of "pipe".
      *
      * @method unpipe
      *
-     * @param {EventHandler} target target emitter object
-     * @return {EventHanlder} provided target
+     * @param {EventHandler} target target handler object
+     * @return {EventHandler} provided target
      */
     Context.prototype.unpipe = function unpipe(target) {
         return this._eventOutput.unpipe(target);

@@ -14,7 +14,7 @@ define(function(require, exports, module) {
 
     /**
      *  Repulsion is a force that repels (attracts) bodies away (towards)
-     *  each other. A repulsion of negative strength is attractive.
+     *    each other. A repulsion of negative strength is attractive.
      *
      *  @class Repulsion
      *  @constructor

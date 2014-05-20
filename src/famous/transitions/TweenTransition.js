@@ -12,18 +12,16 @@ define(function(require, exports, module) {
     /**
      *
      * A state maintainer for a smooth transition between
-     *    numerically-specified states.
-     *
-     *  Example numeric states include floats or
+     *    numerically-specified states.  Example numeric states include floats or
      *    Transfornm objects.
      *
-     * An initial state is set with the constructor or set(startValue). A
+     *    An initial state is set with the constructor or set(startValue). A
      *    corresponding end state and transition are set with set(endValue,
      *    transition). Subsequent calls to set(endValue, transition) begin at
      *    the last state. Calls to get(timestamp) provide the _interpolated state
      *    along the way.
      *
-     * Note that there is no event loop here - calls to get() are the only way
+     *   Note that there is no event loop here - calls to get() are the only way
      *    to find out state projected to the current (or provided) time and are
      *    the only way to trigger callbacks. Usually this kind of object would
      *    be part of the render() path of a visible component.
@@ -147,7 +145,9 @@ define(function(require, exports, module) {
      *    to range inside [0,1]
      */
     TweenTransition.getCurve = function getCurve(curveName) {
-        return registeredCurves[curveName];
+        var curve = registeredCurves[curveName];
+        if (curve !== undefined) return curve;
+        else throw new Error('curve not registered');
     };
 
     /**
@@ -218,7 +218,7 @@ define(function(require, exports, module) {
      * @method set
      *
      *
-     * @param {number|FamousMatrix|Array.<number>|Object.<number, number>} endValue
+     * @param {number|FamousMatrix|Array.Number|Object.<number, number>} endValue
      *    end state to which we _interpolate
      * @param {transition=} transition object of type {duration: number, curve:
      *    f[0,1] -> [0,1] or name}. If transition is omitted, change will be
@@ -261,7 +261,7 @@ define(function(require, exports, module) {
      *
      * @method reset
      *
-     * @param {number|Array.<number>|Object.<number, number>} startValue
+     * @param {number|Array.Number|Object.<number, number>} startValue
      *    starting state
      * @param {number} startVelocity
      *    starting velocity
@@ -284,21 +284,18 @@ define(function(require, exports, module) {
     };
 
     /**
-     * Cancel all transitions and reset to a stable state
+     * Get current velocity
      *
-     * @method reset
+     * @method getVelocity
      *
-     * @param {number|Array.<number>|Object.<number, number>} startValue
-     *    starting state to set to
-     * @param {number|Array.<number>|Object.<number, number>} startVelocity
-     *    starting velocity to set to
+     * @returns {Number} velocity
      */
     TweenTransition.prototype.getVelocity = function getVelocity() {
         return this.velocity;
     };
 
     /**
-     * Get _interpolated state of current action at provided time. If the last
+     * Get interpolated state of current action at provided time. If the last
      *    action has completed, invoke its callback.
      *
      * @method get
@@ -320,8 +317,13 @@ define(function(require, exports, module) {
         var speed = (curve(t) - curve(t - eps)) / eps;
         if (current instanceof Array) {
             velocity = [];
-            for (var i = 0; i < current.length; i++)
-                velocity[i] = speed * (current[i] - start[i]) / duration;
+            for (var i = 0; i < current.length; i++){
+                if (typeof current[i] === 'number')
+                    velocity[i] = speed * (current[i] - start[i]) / duration;
+                else
+                    velocity[i] = 0;
+            }
+
         }
         else velocity = speed * (current - start) / duration;
         return velocity;
@@ -331,8 +333,12 @@ define(function(require, exports, module) {
         var state;
         if (start instanceof Array) {
             state = [];
-            for (var i = 0; i < start.length; i++)
-                state[i] = _interpolate(start[i], end[i], t);
+            for (var i = 0; i < start.length; i++) {
+                if (typeof start[i] === 'number')
+                    state[i] = _interpolate(start[i], end[i], t);
+                else
+                    state[i] = start[i];
+            }
         }
         else state = _interpolate(start, end, t);
         return state;
@@ -401,7 +407,7 @@ define(function(require, exports, module) {
         this.reset(this.get());
     };
 
-    /* Register all the default curves */
+    // Register all the default curves
     TweenTransition.registerCurve('linear', TweenTransition.Curves.linear);
     TweenTransition.registerCurve('easeIn', TweenTransition.Curves.easeIn);
     TweenTransition.registerCurve('easeOut', TweenTransition.Curves.easeOut);
