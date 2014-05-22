@@ -86,6 +86,10 @@ define(function(require, exports, module) {
                     defaultRoute('Dash', 'Misc/Dash', arguments);
                 },
 
+                'thread/:id' : function(){
+                    defaultRoute('Thread', 'Misc/Thread', arguments);
+                },
+
             }
         });
 
@@ -93,7 +97,7 @@ define(function(require, exports, module) {
             // Get view based on hash fragment
             // - return cached item
 
-            Utils.Analytics.trackRoute(window.location.hash);
+            // Utils.Analytics.trackRoute(window.location.hash);
 
             options = options ? options : {};
             if(args === undefined){
@@ -297,6 +301,8 @@ define(function(require, exports, module) {
                 // tell "hiding" first (dunno why)
                 if(App.MainController.lastView && App.MainController.lastView.inOutTransition){
                     transitionOptions = App.MainController.lastView.inOutTransition('hiding', viewName, transitionOptions, delayShowing, PageView, goingBack);
+                    console.log(transitionOptions);
+                    // debugger;
                 }
                 // tell "showing" next
                 if(PageView.inOutTransition){

@@ -501,6 +501,7 @@ define(function(require, exports, module) {
                 target.style.height = (this.size && this.size[1] === true) ?  '' : this._size[1] + 'px';
             }
             this._sizeDirty = false;
+            this.emit('sizeUpdated', this._size);
         }
     };
 
@@ -591,6 +592,7 @@ define(function(require, exports, module) {
     Surface.prototype.setSize = function setSize(size) {
         this.size = size ? [size[0], size[1]] : null;
         this._sizeDirty = true;
+        this.emit('setting Size');
     };
 
     module.exports = Surface;

@@ -3,7 +3,7 @@ define(function(require, exports, module) {
     var Modifier           = require('famous/core/Modifier');
     var Transform          = require('famous/core/Transform');
     var View               = require('famous/core/View');
-    var ScrollView         = require('famous/views/ScrollView');
+    var ScrollView         = require('famous/views/Scrollview');
     
     function ModifiedScrollView(options) {
         ScrollView.apply(this, arguments);

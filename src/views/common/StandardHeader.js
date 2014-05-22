@@ -5,7 +5,7 @@ define(function(require, exports, module) {
     var StateModifier      = require('famous/modifiers/StateModifier');
     var Transform          = require('famous/core/Transform');
     var View               = require('famous/core/View');
-    var ScrollView         = require('famous/views/ScrollView');
+    var ScrollView         = require('famous/views/Scrollview');
     
     var NavigationBar = require('famous/widgets/NavigationBar');
 
@@ -20,7 +20,7 @@ define(function(require, exports, module) {
         this.background = new Surface({
             size: [undefined, undefined],
             properties: {
-                backgroundColor: "black",
+                backgroundColor: "white",
                 zIndex: "-10"
             }
         });

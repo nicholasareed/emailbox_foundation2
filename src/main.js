@@ -78,8 +78,8 @@ require.config({
 
     },
 
-    // urlArgs: new Date().toString(),
-    urlArgs: 'v1.5'
+    urlArgs: new Date().toString(),
+    // urlArgs: 'v1.5'
 
 });
 

@@ -3,7 +3,7 @@ define(function(require, exports, module) {
 
     var Engine = require('famous/core/Engine');
     var View = require('famous/core/View');
-    var ScrollView = require('famous/views/ScrollView');
+    var ScrollView = require('famous/views/Scrollview');
     var SequentialLayout = require('famous/views/SequentialLayout');
     var Surface = require('famous/core/Surface');
     var InputSurface = require('famous/surfaces/InputSurface');

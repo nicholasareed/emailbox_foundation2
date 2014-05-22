@@ -3,7 +3,7 @@ define(function(require, exports, module) {
 
     var Engine = require('famous/core/Engine');
     var View = require('famous/core/View');
-    var ScrollView = require('famous/views/ScrollView');
+    var ScrollView = require('famous/views/Scrollview');
     var SequentialLayout = require('famous/views/SequentialLayout');
     var Surface = require('famous/core/Surface');
     var ContainerSurface = require('famous/surfaces/ContainerSurface');
@@ -19,13 +19,12 @@ define(function(require, exports, module) {
     var ScrollSync    = require("famous/inputs/ScrollSync");
     var GenericSync   = require("famous/inputs/GenericSync");
 
-    // Generic syncing
-    GenericSync.register({
-        "mouse"  : MouseSync,
-        "touch"  : TouchSync
-    });
+    var Draggable     = require("famous/modifiers/Draggable");
 
     var Utility = require('famous/utilities/Utility');
+    var Timer = require('famous/utilities/Timer');
+
+    var _ = require('underscore');
 
     // Views
     var StandardHeader = require('views/common/StandardHeader');
@@ -56,7 +55,7 @@ define(function(require, exports, module) {
         this.collection = new mThread.ThreadCollection([],{
             type: 'label',
             text: 'Inbox',
-            search_limit: 10
+            search_limit: 12
         })
         this.collection.fetch();
         this.collection.populated().then(function(){
@@ -108,8 +107,8 @@ define(function(require, exports, module) {
 
         // link endpoints of layout to widgets
 
-        // Add surfaces to content (buttons)
-        this.addSurfaces();
+        // // Add surfaces to content (buttons)
+        // this.addSurfaces();
 
         // Sequence
         this.contentScrollView.sequenceFrom(this.scrollSurfaces);
@@ -162,7 +161,7 @@ define(function(require, exports, module) {
             console.log(thread);
 
             var surface = new Surface({
-                content: thread.original.subject,
+                content: '(' + thread.attributes.total_emails + ') ' + thread.original.subject,
                 size: [undefined, 50],
                 classes: ["thread-list-item"],
                 properties: {
@@ -174,31 +173,43 @@ define(function(require, exports, module) {
             });
 
             surface.View = new View();
+            surface.View.TransitionModifier = new StateModifier();
+
             surface.View.Thread = thread;
+            surface.Thread = thread;
 
-
-            surface.touchSync = new GenericSync({
-                "mouse"  : {},
-                "touch"  : {}
+            surface.draggable = new Draggable({
+                projection: 'x'
             });
-            surface.position = new Transitionable([0,0]);
+            surface.View.add(surface.View.TransitionModifier).add(surface.draggable).add(surface);
 
-            surface.pipe(surface.touchSync);
+            surface.pipe(surface.draggable)
             surface.pipe(that.contentScrollView);
 
-            surface.touchSync.on('update', function(data){
-                var currentPosition = surface.position.get();
-                surface.position.set([
-                    currentPosition[0] + data.delta[0],
-                    currentPosition[1] + data.delta[1]
-                ]);
-            });
+            that.scrollSurfaces.push(surface.View);
 
-            surface.touchSync.on('end', function(data){
+            // surface.touchSync = new GenericSync({
+            //     "mouse"  : {},
+            //     "touch"  : {}
+            // });
+            // surface.position = new Transitionable([0,0]);
+
+            // surface.pipe(surface.touchSync);
+            // surface.pipe(that.contentScrollView);
+
+            // surface.touchSync.on('update', function(data){
+            //     var currentPosition = surface.position.get();
+            //     surface.position.set([
+            //         currentPosition[0] + data.delta[0],
+            //         currentPosition[1] + data.delta[1]
+            //     ]);
+            // });
+
+            surface.draggable.on('end', function(data){
                 // transition the position back to [0,0] with a bounce
                 // position.set([0,0], {curve : 'easeOutBounce', duration : 300});
                 var velocity = data.velocity;
-                surface.position.set([0, 0], {
+                surface.draggable.setPosition([0, 0], {
                     method : 'spring',
                     period : 150,
                     velocity : velocity
@@ -206,23 +217,21 @@ define(function(require, exports, module) {
 
             });
 
-            surface.View.positionModifier = new Modifier({
-                transform : function(){
-                    var currentPosition = surface.position.get();
-                    return Transform.translate(currentPosition[0], 0, 0); // currentPosition[1]
-                }
-            });
-
-            surface.View.add(surface.View.positionModifier).add(surface);
-
-            // surface.on('click', function(){
-            //     // // alert('clicked!');
-            //     // // alert(this.Setting.href);
-            //     // Backbone.history.navigate(this.Setting.href, {trigger: true});
+            // surface.View.positionModifier = new Modifier({
+            //     transform : function(){
+            //         var currentPosition = surface.position.get();
+            //         return Transform.translate(currentPosition[0], 0, 0); // currentPosition[1]
+            //     }
             // });
 
+            // surface.View.add(surface.View.positionModifier).add(surface);
 
-            that.scrollSurfaces.push(surface.View);
+            surface.on('click', function(){
+                // // alert('clicked!');
+                // // alert(this.Setting.href);
+                Backbone.history.navigate('thread/' + this.Thread._id, {trigger: true});
+            });
+
         });
 
         that.contentScrollView.sequenceFrom(that.scrollSurfaces);
@@ -301,14 +310,38 @@ define(function(require, exports, module) {
                         // Overwriting and using default identity
                         transitionOptions.outTransform = Transform.identity;
 
+                        var baseTransitionDuration = 300;
+                        transitionOptions.outTransition = { 
+                            duration: (that.scrollSurfaces.length * 50) + baseTransitionDuration,
+                            curve: 'linear'
+                        };
+
                         // Hide/move elements
-                        window.setTimeout(function(){
+                        Timer.setTimeout(function(){
                             
                             // // Fade header
                             // that.header.StateModifier.setOpacity(0, transitionOptions.outTransition);
 
                             // Slide content down
-                            that.layout.content.StateModifier.setTransform(Transform.translate(0,window.innerHeight,0), transitionOptions.outTransition);
+                            that.scrollSurfaces.forEach(function(surfaceView, index){
+                                Timer.setTimeout(function(oldIndex){
+                                    // console.log(oldIndex, index);
+                                    // var transition = _.clone(transitionOptions.outTransition);
+                                    // transition.duration = transition.duration - (oldIndex * 50 );//(Math.floor(Math.random() * 100) + 1);
+                                    // console.log(transition.duration);
+
+                                    surfaceView.TransitionModifier.setTransform(Transform.translate(window.innerWidth * -1,0,0), {
+                                        duration: baseTransitionDuration,
+                                        curve: 'easeIn'
+                                    }); //transition);
+                                }.bind(surfaceView, index), 50 * index); //Math.floor(Math.random() * 100) + 1);
+                            }); 
+
+                            // if(goingBack){
+                            //     that.layout.content.StateModifier.setTransform(Transform.translate(window.innerWidth,0,0), transitionOptions.outTransition);
+                            // } else {
+                            //     that.layout.content.StateModifier.setTransform(Transform.translate(window.innerWidth * -1,0,0), transitionOptions.outTransition);
+                            // }
 
                         }, delayShowing);
 
@@ -333,29 +366,54 @@ define(function(require, exports, module) {
 
                         // // Default position
                         // if(goingBack){
-                        //     that.ContentStateModifier.setTransform(Transform.translate(window.innerWidth * -1,0,0));
+                        //     that.layout.content.StateModifier.setTransform(Transform.translate(window.innerWidth * -1,0,0));
                         // } else {
-                        //     that.ContentStateModifier.setTransform(Transform.translate(window.innerWidth + 100,0,0));
+                        //     that.layout.content.StateModifier.setTransform(Transform.translate(window.innerWidth,0,0));
                         // }
-                        // that.layout.content.StateModifier.setTransform(Transform.translate(0, window.innerHeight, 0));
 
                         // Header
                         // - no extra delay
-                        window.setTimeout(function(){
+                        Timer.setTimeout(function(){
 
                             // // Change header opacity
                             // that.header.StateModifier.setOpacity(1, transitionOptions.outTransition);
 
                         }, delayShowing);
 
+                        // // Content
+                        // // - extra delay for content to be gone
+                        // window.setTimeout(function(){
+
+                        //     // // Bring map content back
+                        //     // that.layout.content.StateModifier.setTransform(Transform.translate(0,0,0), transitionOptions.inTransition);
+
+                        //     // Bring back each
+                        //     that.scrollSurfaces.forEach(function(surfaceView, index){
+                        //         Timer.setTimeout(function(){
+                        //             surfaceView.TransitionModifier.setTransform(Transform.translate(0,0,0), transitionOptions.inTransition);
+                        //         },50 * index);
+                        //     }); 
+
+
+                        // }, delayShowing + transitionOptions.outTransition.duration);
+
                         // Content
                         // - extra delay for content to be gone
-                        window.setTimeout(function(){
+                        Timer.setTimeout(function(){
 
-                            // Bring map content back
-                            that.layout.content.StateModifier.setTransform(Transform.translate(0,0,0), transitionOptions.inTransition);
+                            // // Bring map content back
+                            // that.layout.content.StateModifier.setTransform(Transform.translate(0,0,0), transitionOptions.inTransition);
 
-                        }, delayShowing + transitionOptions.outTransition.duration);
+                            // Bring back each
+                            that.scrollSurfaces.forEach(function(surfaceView, index){
+                                Timer.setTimeout(function(){
+                                    surfaceView.TransitionModifier.setTransform(Transform.translate(0,0,0), transitionOptions.inTransition);
+                                },50 * index);
+                            }); 
+
+
+                        }, delayShowing);
+
 
                         break;
                 }

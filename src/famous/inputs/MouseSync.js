@@ -172,6 +172,7 @@ define(function(require, exports, module) {
 
     function _handleLeave(event) {
         if (!this._prevCoord) return;
+        this._prevCoord = null;
 
         var boundMove = _handleMove.bind(this);
         var boundEnd = function(event) {

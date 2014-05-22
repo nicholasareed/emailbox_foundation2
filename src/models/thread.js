@@ -14,31 +14,23 @@ define(function (require) {
             url: App.Credentials.base_api_url,
 
             _related: {},
-            related: [
-                {
+            related: {
+                Email: {
                     key: 'Email',
                     type: 'hasMany',
                     collection: ModelEmail.EmailCollection,
                     path: 'attributes.thread_id',
                     comparator: 'comparator_reverse'
                 }
-            ],
+            },
 
             sync: Backbone.Model.emailbox_sync,
 
             initialize: function () {
+                var that = this;
                 _.bindAll(this, 'fetchRelated');
                 this._related = {};
-            },
-
-            fetchRelated: function(options){
-                var that = this,
-                    defaultOptions = {
-                        reset: false
-                    };
-                options = _.extend(defaultOptions, options || {});
-                // console.log(this.related.length);
-                _.each(this.related, function(related){
+                _.each(this.related, function(related, key){
                     var collection;
                     if(that._related[related.key] == undefined){
 
@@ -73,7 +65,24 @@ define(function (require) {
                         collection = that._related[related.key];
                     }
 
-                    collection.fetch(options);
+                    // No fetch needed
+                    // collection.fetch(options);
+                });
+
+            },
+
+            fetchRelated: function(options){
+                var that = this,
+                    defaultOptions = {
+                        reset: false
+                    };
+                options = _.extend(defaultOptions, options || {});
+                // console.log(this.related.length);
+                _.each(this.related, function(related){
+                    // var collection;
+                    // collection = that._related[related.key];
+
+                    that._related[related.key].fetch(options);
                 });
 
             },
