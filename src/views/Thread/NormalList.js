@@ -513,6 +513,9 @@ define(function(require, exports, module) {
                 content += '<div>'+Thread.toJSON().original.subject+'</div>';
                 content += '<div>'+Thread._related.Email.first().toJSON().original.headers.From+'</div>';
 
+                // console.log(surface.getSize(true));
+                // console.log(surface._size);
+
                 return content;
 
             };
@@ -520,18 +523,21 @@ define(function(require, exports, module) {
             var surface = new ModifiedSurface({
                 content: buildThread(Thread),
                 size: [undefined, true],
-                initialSize: [undefined, 60],
+                initialSize: [undefined, 100],
                 classes: ["thread-list-item"],
                 properties: {
                     lineHeight: '20px',
-                    borderBottom: '1px solid #ddd',
+                    padding: '10px 0',
+                    // borderBottom: '1px solid #ddd',
                     backgroundColor: "white"
                 }
             });
 
             surface.View = new View();
             surface.View.TransitionModifier = new StateModifier();
-            surface.View.TransitionModifier = new StateModifier();
+            surface.View.CustomSizeMod = new StateModifier({
+                size: [undefined, 80]
+            });
 
             surface.View.Thread = thread;
             surface.Thread = thread;
@@ -539,7 +545,7 @@ define(function(require, exports, module) {
             surface.draggable = new Draggable({
                 projection: 'x'
             });
-            surface.View.add(surface.View.TransitionModifier).add(surface.draggable).add(surface.RealSizeMod).add(surface);
+            surface.View.add(surface.View.TransitionModifier).add(surface.draggable).add(surface.CustomSizeMod).add(surface.RealSizeMod).add(surface);
 
             surface.pipe(surface.draggable)
             surface.pipe(that.contentScrollView);
@@ -688,7 +694,7 @@ define(function(require, exports, module) {
                                     // transition.duration = transition.duration - (oldIndex * 50 );//(Math.floor(Math.random() * 100) + 1);
                                     // console.log(transition.duration);
 
-                                    surfaceView.TransitionModifier.setTransform(Transform.translate(window.innerWidth * -1,0,0), {
+                                    surfaceView.TransitionModifier.setTransform(Transform.translate(window.innerWidth,0,0), {
                                         duration: baseTransitionDuration,
                                         curve: 'easeIn'
                                     }); //transition);

@@ -231,7 +231,7 @@
                         fields: this.search_fields,
                         limit: 1,
 
-                        cache: true // enable patching
+                        cache: false // enable patching
                     };
 
                     options.data = options.data || {}; // set default options data, and overwrite
@@ -530,7 +530,7 @@
                         sort: this.sort_conditions || {
                             '_id' : -1
                         },
-                        cache: true
+                        cache: false
                     };
 
                     options.data = options.data || {}; // set default options data, and overwrite

@@ -20,9 +20,17 @@ define(function(require, exports, module) {
             options.size[1] = options.initialSize[1];
         }
 
-        this.RealSizeMod = new StateModifier();
+        this.RealSizeMod = new StateModifier({
+            size: [options.size[0], options.size[1]]
+        });
         this.on('sizeUpdated', function(){
-            this.RealSizeMod.setSize(this.getSize());
+            // console.log(this.getSize());
+            // console.log(this.);
+            if(this._size != null && this._size[1] != 0){
+                // console.log(this._size);
+                // console.dir(this._size.origin._size);
+                this.RealSizeMod.setSize(this.getSize());
+            }
         }.bind(this));
 
     }
