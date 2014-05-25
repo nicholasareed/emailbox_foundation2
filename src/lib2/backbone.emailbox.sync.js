@@ -560,7 +560,7 @@
                                 model._fetched = true;
                                 
                                 // Patching?
-                                if(response.hasOwnProperty('patch')){
+                                if(response.hasOwnProperty('patch') && 1===0){
                                     // returned a patch
 
                                     // do the patching

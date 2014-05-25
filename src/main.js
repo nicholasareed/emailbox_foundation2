@@ -215,7 +215,8 @@ define(function(require, exports, module) {
     App.MainContext.add(new Surface({
         size: [undefined, undefined],
         properties: {
-            background: "url(img/mochaGrunge.png) repeat",
+            // background: "url(img/mochaGrunge.png) repeat",
+            backgroundColor: "white",
             zIndex : -10
         }
     }));

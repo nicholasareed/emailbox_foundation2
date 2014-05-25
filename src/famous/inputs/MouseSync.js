@@ -174,6 +174,8 @@ define(function(require, exports, module) {
         if (!this._prevCoord) return;
         this._prevCoord = null;
 
+        this._eventOutput.emit('leave', this._payload);
+
         var boundMove = _handleMove.bind(this);
         var boundEnd = function(event) {
             _handleEnd.call(this, event);

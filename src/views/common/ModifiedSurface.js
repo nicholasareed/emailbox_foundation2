@@ -1,6 +1,7 @@
 define(function(require, exports, module) {
     var Surface            = require('famous/core/Surface');
     var Modifier           = require('famous/core/Modifier');
+    var StateModifier           = require('famous/modifiers/StateModifier');
     var Transform          = require('famous/core/Transform');
     var View               = require('famous/core/View');
 
@@ -13,6 +14,12 @@ define(function(require, exports, module) {
     function ModifiedSurface(options) {
         Surface.apply(this, arguments);
         if (options) this.setOptions(options);
+
+        this.RealSizeMod = new StateModifier();
+        this.on('sizeUpdated', function(){
+            this.RealSizeMod.setSize(this.getSize());
+        }.bind(this));
+
     }
 
     ModifiedSurface.prototype = Object.create(Surface.prototype);

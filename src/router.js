@@ -87,7 +87,7 @@ define(function(require, exports, module) {
                 },
 
                 'thread/:id' : function(){
-                    defaultRoute('Thread', 'Misc/Thread', arguments);
+                    defaultRoute('Thread', 'Thread/Thread', arguments);
                 },
 
             }
@@ -127,8 +127,10 @@ define(function(require, exports, module) {
                     // this.headerView.pipe(this._eventInput);
                     // this._eventInput.on('menuToggle', this.menuToggle.bind(this))
 
-                    // Cache it
-                    App.Router.Cache.set(PageView);
+                    // Cache it (unless explicitely NOT caching)
+                    if(options.cache !== false){
+                        App.Router.Cache.set(PageView);
+                    }
 
                     delayShowing = 100;
                 }

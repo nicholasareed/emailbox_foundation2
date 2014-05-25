@@ -124,6 +124,11 @@ define(function(require, exports, module) {
         this.eventOutput.emit('update', {position : pos});
     }
 
+    function _handleLeave() {
+        if (!this._active) return;
+        this.eventOutput.emit('leave', {position : this.getPosition()});
+    }
+
     function _handleEnd() {
         if (!this._active) return;
         this.eventOutput.emit('end', {position : this.getPosition()});
@@ -132,6 +137,7 @@ define(function(require, exports, module) {
     function _bindEvents() {
         this.sync.on('start', _handleStart.bind(this));
         this.sync.on('update', _handleMove.bind(this));
+        this.sync.on('leave', _handleLeave.bind(this));
         this.sync.on('end', _handleEnd.bind(this));
     }
 

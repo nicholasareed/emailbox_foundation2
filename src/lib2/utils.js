@@ -257,6 +257,11 @@ define(function (require) {
          
         },
 
+        ratio_remap: function(old_value, old_range, new_range){
+            var new_value = ( (old_value - old_range[0]) / (old_range[1] - old_range[0]) ) * (new_range[1] - new_range[0]) + new_range[0]
+            return new_value;
+        },
+
         slugToCamel: function (slug) {
             var words = slug.split('_');
 

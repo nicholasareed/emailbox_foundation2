@@ -1,0 +1,117 @@
+    
+    <div class="simple-display">
+
+        <div class="clearfix">
+            <div class="three-quarters" style="color:#222;font-size:16px;">
+                {{personName model.original.headers.From_Parsed.[0]}}&nbsp;
+            </div>
+            <div class="quarter text-right">
+                {{receivedDatetimeTiny model.common.date}}
+            </div>
+        </div>
+        <div class="text-selectable" style="color: #777;padding-top:8px;">
+            {{{display_bodies model true}}}
+        </div>
+
+    </div>
+    <div class="full-display">
+
+        <div class="info clearfix">
+
+            <div class="two-thirds">
+                <!-- Sender, recipient, mailing list, etc. -->
+
+                <div class="date-received">
+                    {{receivedDatetime model.common.date}}
+                </div>
+
+                <div class="sender">
+                    {{personName model.original.headers.From_Parsed.[0]}}&nbsp;
+                </div>
+
+                <div class="simple-recipients">
+                    <!-- Should test if I have multiple incoming accounts, and say which account it is for (don't show my default account) -->
+                    
+                    {{#each model.original.headers.To_Parsed}}
+                        <span class="recipient-name to-type">{{personName this}}</span>
+                    {{/each}}
+                    {{#if model.original.headers.Cc_Parsed}}
+                        {{#each model.original.headers.Cc_Parsed}}
+                            <span class="recipient-name cc-type">{{personName this}}</span>
+                        {{/each}}
+                    {{/if}}
+                    {{#if model.original.headers.Bcc_Parsed}}
+                        {{#each model.original.headers.Bcc_Parsed}}
+                            <span class="recipient-name bcc-type">{{personName this}}</span>
+                        {{/each}}
+                    {{/if}}
+
+                </div>
+
+                <div class="complex-recipients nodisplay">
+
+                    <div class="sender-email">
+                        <small>{{senderEmail model.original.headers.From_Parsed}}</small>
+                    </div>
+
+                    <div class="recipient-name">
+                        <small>To: {{#each model.original.headers.To_Parsed}}{{personNameAndEmail this}}{{/each}}</small>
+                    </div>
+
+                    {{#if model.original.headers.Cc_Parsed}}
+                        <div class="recipient-name">
+                            <small>CC: {{#each model.original.headers.Cc_Parsed}}{{personNameAndEmail this}}{{/each}}</small>
+                        </div>
+                    {{/if}}
+
+                    {{#if model.original.headers.Bcc_Parsed}}
+                        <div class="recipient-name">
+                            <small>CC: {{#each model.original.headers.Bcc_Parsed}}{{personNameAndEmail this}}{{/each}}</small>
+                        </div>
+                    {{/if}}
+
+                </div>
+
+            </div>
+
+            <div class="third">
+
+                <div class="text-right action-buttons">
+                    <span class="action-star icon-enabler {{#ifCondIn "\\Starred" model.original.labels}}icon-enabled{{/ifCondIn}}">
+                        <span class="icon ion-ios7-star icon-if-enabled"></span>
+                        <span class="icon ion-ios7-star-outline icon-if-not-enabled"></span>
+                    </span>
+                    <span class="icon action-menu ion-android-more"></span>
+                </div>
+
+            </div>
+
+        </div>
+
+        {{#compare threadModel.original.subject "!=" model.original.headers.Subject}}
+            <!-- still shows "RE:" and similar, so commenting it out -->
+            <!--
+            <div class="different-subject ellipsis full">
+                {{model.original.headers.Subject}}
+            </div>
+            -->
+        {{/compare}}
+
+        <div class="message text-selectable linkify">
+            <!-- {{model.original.TextBody}} -->
+            {{{display_bodies model}}}
+        </div>
+
+        {{#if media_attachments}}
+            <div class="media_attachments">
+                {{#each media_attachments}}
+                    <div class="photo_attachment">
+                        <img src="{{thumbs.basewidth300.path}}" width="100%" />
+                    </div>
+                {{/each}}
+            </div>
+        {{/if}}
+
+        <!-- "quoted text" like signature, additional messages, etc (todo) -->
+
+    </div>
