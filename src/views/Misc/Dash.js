@@ -370,7 +370,7 @@ define(function(require, exports, module) {
 
         this.sidebar.sequenceFrom(this.sidebar.Sequence);
 
-        this.layout.side.add(this.sidebar.Background);
+        // this.layout.side.add(this.sidebar.Background);
         this.layout.side.add(this.sidebar.Overlay);
         this.layout.side.add(this.sidebar);
 
