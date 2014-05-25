@@ -520,6 +520,7 @@ define(function(require, exports, module) {
             var surface = new ModifiedSurface({
                 content: buildThread(Thread),
                 size: [undefined, true],
+                initialSize: [undefined, 60],
                 classes: ["thread-list-item"],
                 properties: {
                     lineHeight: '20px',
