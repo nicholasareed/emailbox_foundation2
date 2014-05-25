@@ -35,6 +35,8 @@ define(function(require, exports, module) {
     var SideNavLayout = require('views/common/SideNavLayout');
     var SidebarView = require('views/common/SidebarView');
 
+    var ModifiedSurface = require('views/common/ModifiedSurface');
+
     var HeaderFooterLayout = require('famous/views/HeaderFooterLayout');
     var NavigationBar = require('famous/widgets/NavigationBar');
     var GridLayout = require("famous/views/GridLayout");
@@ -47,6 +49,34 @@ define(function(require, exports, module) {
         View.apply(this, arguments);
         this.params = params;
 
+        // Determine the type of NormalList we're showing
+        switch(this.params.args[0]){
+            case 'inbox':
+                this.search_info = {
+                    type: 'label',
+                    text: 'Inbox',
+                    search_limit: 12
+                };
+
+                break;
+
+            case 'starred':
+                this.search_info = {
+                    type: 'label',
+                    text: 'Starred',
+                    search_limit: 12
+                };
+                break;
+
+            default:
+                alert('not stored NormalList for this name');
+                Timer.setTimeout(function(){
+                    window.history.go(-1);
+                },100);
+                return;
+                break;
+        }
+
         // create the layout
         this.layout = new SideNavLayout({
             headerSize: 50,
@@ -55,13 +85,24 @@ define(function(require, exports, module) {
             // direction: 0 // sideways
         });
 
-
         this.createContent();
         this.createHeader();
         this.createSidebar();
 
         // Models
 
+        this.collection = new mThread.ThreadCollection([],this.search_info);
+        this.collection.fetch();
+        this.collection.populated().then(function(){
+            // Got a few threads
+
+            // reset surfaces
+            that.scrollSurfaces = [];
+
+            // add surfaces
+            that.addThreads();
+
+        });
         
         // Attach the main transform and the comboNode to the renderTree
         this.add(this.layout);
@@ -76,12 +117,12 @@ define(function(require, exports, module) {
 
         // create the header bar
         this.header = new StandardHeader2({
-            content: 'Dashboard',
+            content: this.search_info.text,
             classes: ["normal-header"],
             backClasses: ["back-header"],
             moreContent: false
         }); 
-        this.header.navBar.title.on('click', function(){
+        this.header.on('back', function(){
             window.history.go(-1);
         });
         this._eventOutput.on('inOutTransition', function(args){
@@ -94,6 +135,20 @@ define(function(require, exports, module) {
 
     PageView.prototype.createSidebar = function(){
         var that = this;
+
+        // // create the header bar
+        // this.header = new StandardHeader({
+        //     content: 'Dash',
+        //     classes: ["normal-header"],
+        //     backContent: false,
+        //     moreContent: false
+        // }); 
+        // this.header.navBar.title.on('click', function(){
+        //     window.history.go(-1);
+        // });
+        // this._eventOutput.on('inOutTransition', function(args){
+        //     this.header.inOutTransition.apply(this.header, args);
+        // })
         
         var maxWidth = window.innerWidth,
             rightPadding = 20,
@@ -144,7 +199,7 @@ define(function(require, exports, module) {
         this.sidebar.Overlay.add(this.sidebar.Overlay.SizeMod).add(this.sidebar.Overlay.OpacityMod).add(this.sidebar.Overlay.Surface);
 
         // Items
-        _.each(_.range(1),function(i){
+        _.each(_.range(5),function(i){
 
             // Container for sideview
             var temp = new View();
@@ -322,6 +377,7 @@ define(function(require, exports, module) {
             });
 
             temp.content.Surface.pipe(temp.touchSync);
+            // temp.content.pipe(temp.touchSync);
 
 
             temp.content.add(temp.content.SizeMod).add(temp.content.Surface);
@@ -330,6 +386,13 @@ define(function(require, exports, module) {
             var node = temp.add(temp.TranslateMod).add(temp.tab.HeightMod).add(temp.positionModifier);
             node.add(temp.content);
             node.add(temp.tab)
+
+            // temp.tab.add(surface.View.TransitionModifier).add(temp.tab.draggable).add(temp.tab.Surface);
+
+            
+            
+
+            // temp.add(temp.SizeMod).add(temp.OriginMod).add(temp.Surface);
 
             that.sidebar.Sequence.push(temp);
         });
@@ -352,7 +415,7 @@ define(function(require, exports, module) {
         // link endpoints of layout to widgets
 
         // // Add surfaces to content (buttons)
-        this.addSurfaces();
+        // this.addSurfaces();
 
         // Sequence
         this.contentScrollView.sequenceFrom(this.scrollSurfaces);
@@ -422,25 +485,151 @@ define(function(require, exports, module) {
 
     };
 
+    PageView.prototype.addThreads = function() {
+        var that = this;
+
+        // console.log(this.collection.toJSON());
+
+        this.collection.each(function(Thread){
+
+            var thread = Thread.toJSON();
+
+            // Get related Emails for Thread
+            Thread._related.Email.populated().then(function(){
+
+                surface.setContent(buildThread(Thread));
+
+            });
+            Thread.fetchRelated();
+
+            var buildThread = function(Thread){
+                
+                if(Thread._related.Email.hasFetched !== true){
+                    return '<div>' + Utils.safeString(Thread.toJSON().original.subject) + '</div>'; //thread.attributes.total_emails;
+                }
+
+                // Build the more complex version now that we have the full email
+                var content = '';
+                content += '<div>'+Thread.toJSON().original.subject+'</div>';
+                content += '<div>'+Thread._related.Email.first().toJSON().original.headers.From+'</div>';
+
+                return content;
+
+            };
+
+            var surface = new ModifiedSurface({
+                content: buildThread(Thread),
+                size: [undefined, true],
+                classes: ["thread-list-item"],
+                properties: {
+                    lineHeight: '20px',
+                    borderBottom: '1px solid #ddd',
+                    backgroundColor: "white"
+                }
+            });
+
+            surface.View = new View();
+            surface.View.TransitionModifier = new StateModifier();
+            surface.View.TransitionModifier = new StateModifier();
+
+            surface.View.Thread = thread;
+            surface.Thread = thread;
+
+            surface.draggable = new Draggable({
+                projection: 'x'
+            });
+            surface.View.add(surface.View.TransitionModifier).add(surface.draggable).add(surface.RealSizeMod).add(surface);
+
+            surface.pipe(surface.draggable)
+            surface.pipe(that.contentScrollView);
+
+            that.scrollSurfaces.push(surface.View);
+
+            // surface.touchSync = new GenericSync({
+            //     "mouse"  : {},
+            //     "touch"  : {}
+            // });
+            // surface.position = new Transitionable([0,0]);
+
+            // surface.pipe(surface.touchSync);
+            // surface.pipe(that.contentScrollView);
+
+            // surface.touchSync.on('update', function(data){
+            //     var currentPosition = surface.position.get();
+            //     surface.position.set([
+            //         currentPosition[0] + data.delta[0],
+            //         currentPosition[1] + data.delta[1]
+            //     ]);
+            // });
+
+            surface.draggable.on('end', function(data){
+                // transition the position back to [0,0] with a bounce
+                // position.set([0,0], {curve : 'easeOutBounce', duration : 300});
+                var velocity = data.velocity;
+                surface.draggable.setPosition([0, 0], {
+                    method : 'spring',
+                    period : 150,
+                    velocity : velocity
+                });
+
+            });
+
+            // surface.View.positionModifier = new Modifier({
+            //     transform : function(){
+            //         var currentPosition = surface.position.get();
+            //         return Transform.translate(currentPosition[0], 0, 0); // currentPosition[1]
+            //     }
+            // });
+
+            // surface.View.add(surface.View.positionModifier).add(surface);
+
+            surface.on('click', function(){
+                // // alert('clicked!');
+                // // alert(this.Setting.href);
+                Backbone.history.navigate('thread/' + this.Thread._id, {trigger: true});
+            });
+
+        });
+
+        that.contentScrollView.sequenceFrom(that.scrollSurfaces);
+
+    };
+
     PageView.prototype.addSurfaces = function() {
         var that = this;
 
         var settings = [
             {
-                title: 'Inbox',
-                desc: '',
-                href: 'threads/stored/inbox'
+                title: 'Feedback',
+                desc: 'Tell us how to improve!' + ' v' + App.ConfigImportant.Version,
+                href: 'feedback/settings'
             },
+            // {
+            //     title: 'My Cars',
+            //     desc: 'Model and related details',
+            //     href: 'settings/cars'
+            // },
+            // {
+            //     title: 'Drivers',
+            //     desc: 'View and edit',
+            //     href: 'drivers'
+            // },
+
+            // {
+            //     title: 'Account and Perks',
+            //     desc: '$$ in your pocket',
+            //     href: 'perks'
+            // },
+            
             {
-                title: 'Starred',
-                desc: '',
-                href: 'threads/stored/starred'
+                title: 'Logout and Exit',
+                desc: 'Buh-bye',
+                href: 'logout'
             }
         ];
 
         settings.forEach(function(setting){
-            var surface = new View();
-            surface.Surface = new Surface({
+            var surface = new Surface({
                 content: '<div>'+setting.title+'</div><div>'+setting.desc+'</div>',
                 size: [undefined, 50],
                 classes: ["settings-list-item"],
@@ -451,17 +640,13 @@ define(function(require, exports, module) {
                     backgroundColor: "white"
                 }
             });
-            surface.TransitionModifier = new StateModifier();
-            surface.Surface.Setting = setting;
-
-            surface.Surface.pipe(that.contentScrollView);
-            surface.Surface.on('click', function(){
+            surface.Setting = setting;
+            surface.pipe(that.contentScrollView);
+            surface.on('click', function(){
                 // alert('clicked!');
                 // alert(this.Setting.href);
                 Backbone.history.navigate(this.Setting.href, {trigger: true});
             });
-
-            surface.add(surface.TransitionModifier).add(surface.Surface);
             that.scrollSurfaces.push(surface);
         });
 
@@ -502,7 +687,7 @@ define(function(require, exports, module) {
                                     // transition.duration = transition.duration - (oldIndex * 50 );//(Math.floor(Math.random() * 100) + 1);
                                     // console.log(transition.duration);
 
-                                    surfaceView.TransitionModifier.setTransform(Transform.translate(window.innerWidth,0,0), {
+                                    surfaceView.TransitionModifier.setTransform(Transform.translate(window.innerWidth * -1,0,0), {
                                         duration: baseTransitionDuration,
                                         curve: 'easeIn'
                                     }); //transition);
@@ -583,7 +768,7 @@ define(function(require, exports, module) {
 
                             // Bring back each
                             that.scrollSurfaces.forEach(function(surfaceView, index){
-                                
+                                console.log(1);
                                 Timer.setTimeout(function(){
                                     surfaceView.TransitionModifier.setTransform(Transform.translate(0,0,0), transitionOptions.inTransition);
                                 },50 * index);
@@ -593,6 +778,8 @@ define(function(require, exports, module) {
                             _.each(that.sidebar.Sequence, function(tmpView){
                                 tmpView.position.resetToOriginal({});
                             });
+
+                            console.log(that.scrollSurfaces);
 
                         }, delayShowing);
 

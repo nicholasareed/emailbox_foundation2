@@ -1471,6 +1471,10 @@ define(function (require) {
             return oauthParams;
         },
 
+        safeString: function(str){
+            return $('</div>').html(str).text();
+        },
+
         nl2br: function(str, is_xhtml) {
             // http://kevin.vanzonneveld.net
             // - nl2br() => php.js

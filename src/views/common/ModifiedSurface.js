@@ -15,6 +15,13 @@ define(function(require, exports, module) {
         Surface.apply(this, arguments);
         if (options) this.setOptions(options);
 
+        if(options.size[0] === true){
+            options.size[0] = 1;
+        }
+        if(options.size[1] === true){
+            options.size[1] = 1;
+        }
+
         this.RealSizeMod = new StateModifier();
         this.on('sizeUpdated', function(){
             this.RealSizeMod.setSize(this.getSize());

@@ -79,7 +79,7 @@ require.config({
     },
 
     // urlArgs: new Date().toString(),
-    urlArgs: 'v1.6'
+    urlArgs: 'v1.7'
 
 });
 

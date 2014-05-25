@@ -86,6 +86,14 @@ define(function(require, exports, module) {
                     defaultRoute('Dash', 'Misc/Dash', arguments);
                 },
 
+                'threads/stored/:name' : function(){
+                    defaultRoute('ThreadList', 'Thread/NormalList', arguments);
+                },
+
+                'threads/:type/:text' : function(){
+                    defaultRoute('ThreadList', 'Thread/NormalListCustom', arguments);
+                },
+
                 'thread/:id' : function(){
                     defaultRoute('Thread', 'Thread/Thread', arguments);
                 },
