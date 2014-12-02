@@ -249,8 +249,14 @@ define(function(require, exports, module) {
             var params = $.param(p);
             var call_url = App.Credentials.base_login_url + "/apps/authorize/?" + params;
 
-            var ref = window.open(call_url, '_system', 'location=yes');
+            var ref = window.open(call_url, '_blank', 'location=yes');
             ref.addEventListener('loadstart', function(event) { 
+                
+                // var url = Utils.parseUrl(e.url);
+                // if(url.hash == '#exit'){
+                //     ref.close();
+                // }
+
                 // event.url;
                 var tmp_url = event.url;
 
