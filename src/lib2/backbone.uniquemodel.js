@@ -21,6 +21,7 @@
    */
 
   function UniqueModel(Model, modelName, storageAdapter) {
+
     modelName = modelName || _.uniqueId('UniqueModel_');
     storageAdapter = storageAdapter || UniqueModel.STORAGE_DEFAULT_ADAPTER;
 
@@ -43,6 +44,7 @@
   };
 
   UniqueModel.addModel = function (Model, modelName, storageAdapter) {
+
     // Throw error here? (added twice)
     if (globalCache[modelName])
       return globalCache[modelName];
@@ -98,6 +100,32 @@
 
     newModel: function (attrs, options) {
       var instance = new this.Model(attrs, options);
+      // var that2 = this;
+      instance.hasFetched = false;
+      instance.populatedPromise = $.Deferred();
+      instance.populated = function(){
+        // return population after we make sure it has been populated
+        console.log(instance.populatedPromise.promise());
+        // debugger;
+        var newDef = $.Deferred();
+        instance.populatedPromise.promise().then(function(){
+          // debugger;
+          if(Object.keys(instance.toJSON()).length <= 1){
+            console.log('not yet ready for primetime');
+            console.log(JSON.stringify(instance.toJSON()));
+            console.trace();
+            debugger;
+            return;
+          }
+          // console.log(instance.toJSON());
+          // debugger;
+          instance.hasFetched = true;
+          newDef.resolve();
+          
+        });
+        // return this.populatedPromise.promise();
+        return newDef.promise();
+      };
 
       if (this.storage) {
         if (instance.id)
@@ -156,6 +184,7 @@
       // Attempt to restore a cached instance
       var instance = this.instances[id];
       if (!instance) {
+        console.info('not seen instance before');
         // If we haven't seen this instance before, start caching it
         instance = this.add(id, attrs, options);
         if (options.fromStorage)

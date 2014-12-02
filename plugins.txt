@@ -1,6 +1,0 @@
-
-# Android
-cordova plugin add https://github.com/nicholasareed/cordova-plugin-datepicker
-
-# iOS
-cordova plugin add https://github.com/nicholasareed/cordova-plugin-datepicker

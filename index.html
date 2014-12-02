@@ -1,20 +1,28 @@
 <!DOCTYPE HTML>
 <html>
     <head>
-        <title>Foundation2</title>
+        <title>Foundation</title>
         <meta name="viewport" content="width=device-width, maximum-scale=1, user-scalable=no" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black" />
-        <link rel="stylesheet" type="text/css" href="src/lib2/leaflet/leaflet.css" />
+
         <link rel="stylesheet" type="text/css" href="src/famous/core/famous.css" />
         <link rel="stylesheet" type="text/css" href="css/ionicons.css" />
         <link rel="stylesheet" type="text/css" href="css/spectrum.css" />
         <link rel="stylesheet" type="text/css" href="css/bootflat.css" />
+        <link rel="stylesheet" type="text/css" href="css/rrssb.css" />
+
+        <link rel="stylesheet" type="text/css" href="css/general.css" />
         <link rel="stylesheet" type="text/css" href="css/app.css" />
 
+        <script type="text/javascript">
+            var cordova;
+        </script>
         <script type="text/javascript" src="cordova.js"></script>
 
+        <script type="text/javascript" src="src/lib2/pouchdb.3.1.0.js"></script>
+        <script type="text/javascript" src="src/lib2/fastclick.js"></script>
         <script type="text/javascript" src="src/lib/functionPrototypeBind.js"></script>
         <script type="text/javascript" src="src/lib/classList.js"></script>
         <script type="text/javascript" src="src/lib/requestAnimationFrame.js"></script>
@@ -23,10 +31,17 @@
         <script type="text/javascript">
             var GLOBAL_onReady = false;
 
-            // track.js customer id
-            var _trackJs = { 
-                customer: '2138571d0e004d109396748e01e291a0'
-            };
+            // temp fix for iOS8 beta 1 (fixed in beta 2), add it after the reference to cordova.js
+            if (navigator.userAgent === undefined) {
+                navigator.__defineGetter__('userAgent', function() {
+                    return("Mozilla/5.0 (iPhone; CPU iPhone OS 8_0 like Mac OS X) AppleWebKit");
+                });
+            }
+
+
+            window.addEventListener('load', function() {
+                FastClick.attach(document.body);
+            }, false);
 
             // Required scripts to add after deviceready
             var require_scripts = [
@@ -70,25 +85,61 @@
                 // browser?
                 if (!navigator.userAgent.match(/(iPhone|iPod|iPad|Android|BlackBerry)/)) {
                     // browser
+                    GLOBAL_onReady = true;
                     addScripts(require_scripts);
                 } else {
-                    // addScripts(require_scripts);
+                    try {
+                        if(cordova === undefined){
+                            throw 'addScript';
+                        }
+                    }catch(err){
+                        // browser
+                        console.log('catch browser');
+                        GLOBAL_onReady = true;
+                        addScripts(require_scripts);
+                        return;
+                    }
+
                 }
 
                 // wait for deviceready from cordova
+                console.log('wait for deviceready from cordova');
                 document.addEventListener("deviceready", function(){
                     // alert('deviceready listener fired!');
                     GLOBAL_onReady = true;
                     addScripts(require_scripts);
-                    // loadGoogleMapsScript();
                 }, false);
 
+
             }
+
+            function handleOpenURL(url, not_immediate) {
+                console.log('handleOpenURL');
+                console.log(url);
+                setTimeout(function() {
+                    // console.log('setTimeout');
+                    if(App && App.Events){
+                        // alert('OK');
+                        if(not_immediate){
+                            setTimeout(function(){
+                                App.Events.emit('handle-open-url', url);
+                            },1000); // give it an extra second to finish loading everything
+                        } else {
+                            // no delay in launching
+                            App.Events.emit('handle-open-url', url);
+                        }
+                    } else {
+                        handleOpenURL(url, true);
+                    }
+
+                }, 500);
+            }
+
         </script>
 
         
         
 
     </head>
-    <body onload="onLoad()" style="background:#666;"></body>
+    <body onload="onLoad()" style="background:#000;"></body>
 </html>

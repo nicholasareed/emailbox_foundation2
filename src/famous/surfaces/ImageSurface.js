@@ -9,7 +9,7 @@
  */
 
 define(function(require, exports, module) {
-    var Surface = require('famous/core/Surface');
+    var Surface = require('../core/Surface');
 
     /**
      * A surface containing image content.
@@ -24,7 +24,53 @@ define(function(require, exports, module) {
     function ImageSurface(options) {
         this._imageUrl = undefined;
         Surface.apply(this, arguments);
+
+        this.on('deploy',function(){ 
+            // console.log('deployed image', this);
+            if (this._currentTarget.complete) {
+                // surface.setContent('Fully loaded on deploy');
+                // console.log('fully loaded on deploy');
+            } else {
+                this.on('load', function(e){
+                    // surface.setContent('completed loading = ' + this._currentTarget.complete);
+                    // console.log('NOW loaded');
+                    // console.log(this);
+                    // console.log(this._contentDirty);
+                    // this.setSize(this._originalSize);
+                    this._contentDirty = true; // good or bad?
+                });
+            }
+        });
+
+
     }
+
+    var urlCache = [];
+    var countCache = [];
+    var nodeCache = [];
+    var cacheEnabled = true;
+
+    ImageSurface.enableCache = function enableCache() {
+        cacheEnabled = true;
+    };
+
+    ImageSurface.disableCache = function disableCache() {
+        cacheEnabled = false;
+    };
+
+    ImageSurface.clearCache = function clearCache() {
+        urlCache = [];
+        countCache = [];
+        nodeCache = [];
+    };
+
+    ImageSurface.getCache = function getCache() {
+        return {
+            urlCache: urlCache,
+            countCache: countCache,
+            nodeCache: countCache
+        };
+    };
 
     ImageSurface.prototype = Object.create(Surface.prototype);
     ImageSurface.prototype.constructor = ImageSurface;
@@ -37,6 +83,26 @@ define(function(require, exports, module) {
      * @param {string} imageUrl
      */
     ImageSurface.prototype.setContent = function setContent(imageUrl) {
+        var urlIndex = urlCache.indexOf(this._imageUrl);
+        if (urlIndex !== -1) {
+            if (countCache[urlIndex] === 1) {
+                urlCache.splice(urlIndex, 1);
+                countCache.splice(urlIndex, 1);
+                nodeCache.splice(urlIndex, 1);
+            } else {
+                countCache[urlIndex]--;
+            }
+        }
+
+        urlIndex = urlCache.indexOf(imageUrl);
+        if (urlIndex === -1) {
+            urlCache.push(imageUrl);
+            countCache.push(1);
+        }
+        else {
+            countCache[urlIndex]++;
+        }
+
         this._imageUrl = imageUrl;
         this._contentDirty = true;
     };
@@ -49,7 +115,23 @@ define(function(require, exports, module) {
      * @param {Node} target document parent of this container
      */
     ImageSurface.prototype.deploy = function deploy(target) {
+        var urlIndex = urlCache.indexOf(this._imageUrl);
+        if (nodeCache[urlIndex] === undefined && cacheEnabled) {
+            var img = new Image();
+            img.src = this._imageUrl || '';
+            nodeCache[urlIndex] = img;
+        }
+
         target.src = this._imageUrl || '';
+
+        // var size = this.size ? this.size : [undefined, undefined]; //this.getSize() return _size, which we don't want
+        // if(size.indexOf(true) !== -1){
+        //     var width = size[0] === true ? target.offsetWidth : size[0];
+        //     var height = size[1] === true ? target.offsetHeight : size[1];
+
+        //     this._trueSize = [width, height];
+        //     console.log('image trueSize');
+        // }
     };
 
     /**

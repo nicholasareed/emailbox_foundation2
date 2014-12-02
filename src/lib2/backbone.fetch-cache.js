@@ -117,74 +117,60 @@
   }
 
   function setLocalStorage() {
-    if (!supportLocalStorage || !Backbone.fetchCache.localStorage) { return; }
-    try {
-      localStorage.setItem('backboneCache', JSON.stringify(Backbone.fetchCache._cache));
-    } catch (err) {
-      var code = err.code || err.number || err.message;
-      if (code === 22) {
-        this._deleteCacheWithPriority();
-      } else {
-        throw(err);
+
+    if(App && App.Data && App.Data.usePg){
+
+      var fail = function (evt) {
+        console.log('FAILED evt2');
+        console.log(evt);
+      };
+      // Merge into a once-every-1000ms-at-most queue
+      if(!App.Data.waitingToSave){
+        App.Data.waitingToSave = 1;
+        window.setTimeout(function(){
+          App.Data.waitingToSave = 0;
+          // return;
+          window.requestFileSystem(LocalFileSystem.PERSISTENT, 0, 
+            function (fileSystem) {
+              fileSystem.root.getFile("nemesis.cache", {create: true, exclusive: false}, 
+                function (fileEntry) {
+                  fileEntry.createWriter(
+                    function (writer) {
+                      // Should be analyzing the document storage amount here
+                      // var bf = new Blowfish(App.Credentials.encryption_key); // what key should I be encrypting it with??
+                      var j = JSON.stringify(Backbone.fetchCache._cache);
+                      // var b = App.Utils.base64.encode(j);
+                      var b = j; // just json.stringified
+                      // var ciphertext = App.Utils.Encryption.encrypt(b); // takes FOREVER and locks the process
+                      var ciphertext = b;
+                      writer.write(ciphertext);
+                      console.info('Wrote to FileSystem');
+                    }, fail);
+
+                },
+              fail);
+            }, 
+            fail);
+        },1000);
       }
-    }
-  }
-
-  // function setLocalStorage() {
-
-  //   if(App && App.Data && App.Data.usePg){
-
-  //     var fail = function (evt) {
-  //       console.log('FAILED evt2');
-  //       console.log(evt);
-  //     };
-  //     // Merge into a once-every-1000ms-at-most queue
-  //     if(!App.Data.waitingToSave){
-  //       App.Data.waitingToSave = 1;
-  //       window.setTimeout(function(){
-  //         App.Data.waitingToSave = 0;
-  //         // return;
-  //         window.requestFileSystem(LocalFileSystem.PERSISTENT, 0, 
-  //           function (fileSystem) {
-  //             fileSystem.root.getFile("mailfoundation.cache", {create: true, exclusive: false}, 
-  //               function (fileEntry) {
-  //                 fileEntry.createWriter(
-  //                   function (writer) {
-  //                     // Should be analyzing the document storage amount here
-  //                     // var bf = new Blowfish(App.Credentials.encryption_key); // what key should I be encrypting it with??
-  //                     var j = JSON.stringify(Backbone.fetchCache._cache);
-  //                     // var b = App.Utils.base64.encode(j);
-  //                     var b = j; // just json.stringified
-  //                     // var ciphertext = App.Utils.Encryption.encrypt(b); // takes FOREVER and locks the process
-  //                     var ciphertext = b;
-  //                     writer.write(ciphertext);
-  //                     console.info('Wrote to FileSystem');
-  //                   }, fail);
-
-  //               },
-  //             fail);
-  //           }, 
-  //           fail);
-  //       },1000);
-  //     }
       
 
-  //   } else {
-  //     // Use localStorage (not phonegap)
-  //     if (!supportLocalStorage || !Backbone.fetchCache.localStorage) { return; }
-  //     try {
-  //       localStorage.setItem('backboneCache', JSON.stringify(Backbone.fetchCache._cache));
-  //     } catch (err) {
-  //       var code = err.code || err.number || err.message;
-  //       if (code === 22) {
-  //         this._deleteCacheWithPriority();
-  //       } else {
-  //         throw(err);
-  //       }
-  //     }
-  //   }
+    } else {
+      // Use localStorage (not phonegap)
+      if (!supportLocalStorage || !Backbone.fetchCache.localStorage) { return; }
+      try {
+        localStorage.setItem('backboneCache', JSON.stringify(Backbone.fetchCache._cache));
+      } catch (err) {
+        var code = err.code || err.number || err.message;
+        if (code === 22) {
+          this._deleteCacheWithPriority();
+        } else {
+          throw(err);
+        }
+      }
+    }
 
-  // }
+  }
 
   function getLocalStorage() {
 
@@ -202,7 +188,7 @@
       };
       window.requestFileSystem(LocalFileSystem.PERSISTENT, 0, 
         function (fileSystem) {
-          fileSystem.root.getFile("mailfoundation.cache", null, 
+          fileSystem.root.getFile("nemesis.cache", null, 
             function (fileEntry) {
               fileEntry.file(
                 function gotFile(file){
@@ -276,9 +262,6 @@
       self.set(attributes, opts);
       if (_.isFunction(opts.prefillSuccess)) { opts.prefillSuccess(self, attributes, opts); }
 
-      // Resolve populatedPromise
-      self.populatedPromise.resolve(attributes);
-
       // Trigger sync events
       self.trigger('cachesync', self, attributes, opts);
       self.trigger('sync', self, attributes, opts);
@@ -288,14 +271,26 @@
       // ...finish and return if we're not
       else {
         if (_.isFunction(opts.success)) { opts.success(self, attributes, opts); }
+        console.log('resovle=fetch-cache2', self);
         deferred.resolve(self);
       }
+
+      // // Resolve populatedPromise
+      // self.populatedPromise.resolve(attributes); // uncommented
+      
     }
 
     if (data) {
       expired = data.expires;
       expired = expired && data.expires < (new Date()).getTime();
       attributes = data.value;
+
+
+      if(Object.keys(attributes) < 2){
+        console.log(attributes);
+        debugger;
+      }
+
     }
 
     if (!expired && (opts.cache || opts.prefill) && attributes) {
@@ -378,6 +373,7 @@
       // ...finish and return if we're not
       else {
         if (_.isFunction(opts.success)) { opts.success(self, attributes, opts); }
+        console.log('resolve in fetch-cache', self);
         deferred.resolve(self);
       }
     }

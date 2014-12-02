@@ -31,7 +31,11 @@ define(function(require, exports, module) {
     var Engine = {};
 
     var contexts = [];
+
     var nextTickQueue = [];
+    var currentFrame = 0;
+    var nextTickFrame = 0;
+
     var deferQueue = [];
 
     var lastTime = Date.now();
@@ -45,7 +49,8 @@ define(function(require, exports, module) {
         containerType: 'div',
         containerClass: 'famous-container',
         fpsCap: undefined,
-        runLoop: true
+        runLoop: true,
+        appMode: true
     };
     var optionsManager = new OptionsManager(options);
 
@@ -65,6 +70,9 @@ define(function(require, exports, module) {
      * @method step
      */
     Engine.step = function step() {
+        currentFrame++;
+        nextTickFrame = currentFrame;
+
         var currentTime = Date.now();
 
         // skip frame if we're over our framerate cap
@@ -78,8 +86,10 @@ define(function(require, exports, module) {
         eventHandler.emit('prerender');
 
         // empty the queue
-        for (i = 0; i < nextTickQueue.length; i++) nextTickQueue[i].call(this);
-        nextTickQueue.splice(0);
+        if (nextTickQueue.length) {
+            for (i = 0; i < nextTickQueue[0].length; i++) nextTickQueue[0][i].call(this, currentFrame);
+            nextTickQueue.splice(0, 1);
+        }
 
         // limit total execution time for deferrable functions
         while (deferQueue.length && (Date.now() - currentTime) < MAX_DEFER_FRAME_TIME) {
@@ -95,11 +105,11 @@ define(function(require, exports, module) {
     function loop() {
         if (options.runLoop) {
             Engine.step();
-            requestAnimationFrame(loop);
+            window.requestAnimationFrame(loop);
         }
         else loopEnabled = false;
     }
-    requestAnimationFrame(loop);
+    window.requestAnimationFrame(loop);
 
     //
     // Upon main document window resize (unless on an "input" HTML element):
@@ -116,10 +126,22 @@ define(function(require, exports, module) {
     window.addEventListener('resize', handleResize, false);
     handleResize();
 
-    // prevent scrolling via browser
-    window.addEventListener('touchmove', function(event) {
-        event.preventDefault();
-    }, true);
+    /**
+     * Initialize famous for app mode
+     *
+     * @static
+     * @private
+     * @method initialize
+     */
+    function initialize() {
+        // prevent scrolling via browser
+        window.addEventListener('touchmove', function(event) {
+            event.preventDefault();
+        }, true);
+        document.body.classList.add('famous-root');
+        document.documentElement.classList.add('famous-root');
+    }
+    var initialized = false;
 
     /**
      * Add event handler object to set of downstream handlers.
@@ -236,8 +258,8 @@ define(function(require, exports, module) {
      * @param {string} key
      * @return {Object} engine options
      */
-    Engine.getOptions = function getOptions() {
-        return optionsManager.getOptions.apply(optionsManager, arguments);
+    Engine.getOptions = function getOptions(key) {
+        return optionsManager.getOptions(key);
     };
 
     /**
@@ -268,6 +290,8 @@ define(function(require, exports, module) {
      * @return {Context} new Context within el
      */
     Engine.createContext = function createContext(el) {
+        if (!initialized && options.appMode) Engine.nextTick(initialize);
+
         var needMountContainer = false;
         if (!el) {
             el = document.createElement(options.containerType);
@@ -300,6 +324,31 @@ define(function(require, exports, module) {
     };
 
     /**
+     * Returns a list of all contexts.
+     *
+     * @static
+     * @method getContexts
+     * @return {Array} contexts that are updated on each tick
+     */
+    Engine.getContexts = function getContexts() {
+        return contexts;
+    };
+
+    /**
+     * Removes a context from the run loop. Note: this does not do any
+     *     cleanup.
+     *
+     * @static
+     * @method deregisterContext
+     *
+     * @param {Context} context Context to deregister
+     */
+    Engine.deregisterContext = function deregisterContext(context) {
+        var i = contexts.indexOf(context);
+        if (i >= 0) contexts.splice(i, 1);
+    };
+
+    /**
      * Queue a function to be executed on the next tick of the
      *    Engine.
      *
@@ -309,7 +358,17 @@ define(function(require, exports, module) {
      * @param {function(Object)} fn function accepting window object
      */
     Engine.nextTick = function nextTick(fn) {
-        nextTickQueue.push(fn);
+        var frameIndex = nextTickFrame - currentFrame;
+        if (!nextTickQueue[frameIndex]) nextTickQueue[frameIndex] = [];
+
+        function frameChecker(frame) {
+            var nextFrame = frame + 1;
+            if (nextTickFrame !== nextFrame) nextTickFrame = nextFrame;
+            fn();
+        }
+
+        nextTickQueue[frameIndex].push(frameChecker);
+
     };
 
     /**
@@ -331,7 +390,7 @@ define(function(require, exports, module) {
             // kick off the loop only if it was stopped
             if (!loopEnabled && data.value) {
                 loopEnabled = true;
-                requestAnimationFrame(loop);
+                window.requestAnimationFrame(loop);
             }
         }
     });

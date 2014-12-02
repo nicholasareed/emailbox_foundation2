@@ -1,12 +1,15 @@
-/*globals define*/
+
 define(function(require, exports, module) {
 
     var Engine = require('famous/core/Engine');
     var View = require('famous/core/View');
     var ScrollView = require('famous/views/Scrollview');
     var SequentialLayout = require('famous/views/SequentialLayout');
+    var Lightbox = require('famous/views/Lightbox');
+    var RenderController = require('famous/views/RenderController');
+    var FlexibleLayout = require('famous/views/FlexibleLayout');
     var Surface = require('famous/core/Surface');
-    var ContainerSurface = require('famous/surfaces/ContainerSurface');
+    var ImageSurface = require('famous/surfaces/ImageSurface');
     var Modifier = require('famous/core/Modifier');
     var StateModifier = require('famous/modifiers/StateModifier');
     var Transitionable     = require('famous/transitions/Transitionable');
@@ -14,794 +17,786 @@ define(function(require, exports, module) {
     var Matrix = require('famous/core/Transform');
     var RenderNode         = require('famous/core/RenderNode')
 
-    var MouseSync     = require("famous/inputs/MouseSync");
-    var TouchSync     = require("famous/inputs/TouchSync");
-    var ScrollSync    = require("famous/inputs/ScrollSync");
-    var GenericSync   = require("famous/inputs/GenericSync");
-
-    var Draggable     = require("famous/modifiers/Draggable");
-
     var Utility = require('famous/utilities/Utility');
     var Timer = require('famous/utilities/Timer');
 
-    // Extras
-    var Utils = require('utils');
-
-    var _ = require('underscore');
-
-    // Views
-    var StandardHeader = require('views/common/StandardHeader');
-    var StandardHeader2 = require('views/common/StandardHeader2');
-    var SideNavLayout = require('views/common/SideNavLayout');
-    var SidebarView = require('views/common/SidebarView');
-
-    var ModifiedSurface = require('views/common/ModifiedSurface');
-
     var HeaderFooterLayout = require('famous/views/HeaderFooterLayout');
+
+    var TabBar = require('famous/widgets/TabBar');
     var NavigationBar = require('famous/widgets/NavigationBar');
     var GridLayout = require("famous/views/GridLayout");
 
-    // Templates
-    var Handlebars          = require('lib2/handlebars-adapter');
+    var EventHandler = require('famous/core/EventHandler');
+
+    var $ = require('jquery');
+    var Credentials = JSON.parse(require('text!credentials.json'));
+
+    // Views
+    var StandardHeader = require('views/common/StandardHeader');
+    var StandardTabBar = require('views/common/StandardTabBar');
+    var SmartSurface = require('views/common/SmartSurface');
+    var LayoutBuilder = require('views/common/LayoutBuilder');
+
+    var ThreadEmailListView = require('./Subviews/EmailList');
+
+    // Extras
+    var Utils = require('utils');
+    var _ = require('underscore');
+    var numeral = require('lib2/numeral.min');
+    var crypto = require('lib2/crypto');
 
     // Models
-    var mThread = require('models/thread');
+    // var InvoiceModel = require('models/invoice');
+    var ThreadModel = require('models/thread');
+    // var ContestVoteModel = require('models/contest_vote');
+    // var ContestContentModel = require('models/contest_content');
 
-    function PageView(params) {
+    // Subviews
+
+    // // ContestContent
+    // var ContestContentView      = require('./Subviews/ContestContent');
+
+    // // Game story/chat
+    // var GameStoryListView      = require('views/Game/Subviews/GameStoryList');
+
+    // // Game Sharing
+    // var GameShareView      = require('views/Game/Subviews/GameShare');
+
+    // // Game Media (unused atm)
+    // var PlayerGameListView      = require('views/Player/PlayerGameList');
+
+    // // Media Blocks
+    // var PlayerMediaBlocksView      = require('views/Player/PlayerMediaBlocks');
+
+    function PageView(options) {
         var that = this;
         View.apply(this, arguments);
-        this.params = params;
+        this.options = options;
+
+        this.thread_id = that.options.args[0];
+        this._subviews = [];
+        this.loadModels();
 
         // create the layout
-        this.layout = new SideNavLayout({
-            headerSize: 50,
-            sideSize: 50,
-            footerSize: 0,
-            // direction: 0 // sideways
+        this.layout = new HeaderFooterLayout({
+            headerSize: App.Defaults.Header.size,
+            footerSize: App.Defaults.Footer.size
         });
 
         this.createContent();
         this.createHeader();
-        this.createSidebar();
-
-        // Models
-
-        this.model = new mThread.Thread({
-            _id: this.params.args[0]
-        })
-        this.model.fetch({prefill: true});
-        this.model.populated().then(function(){
-            // Got a few threads
-
-            // Get related Emails for Thread
-            that.model._related.Email.populated().then(function(){
-                // console.log(this);
-                // console.log(that.model._related.Email.toJSON());
-                console.log(that.model);
-                that.header.navBar.title.setContent(that.model._related.Email.length+ ' email'+(that.model._related.Email.length === 1 ? '':'s')+' in thread' );
-
-                that.addEmails();
-                // debugger;
-            });
-            that.model.fetchRelated();
-
-            // reset surfaces
-            that.scrollSurfaces = [];
-
-            // // add surfaces
-            // that.addThreads();
-
-        });
         
         // Attach the main transform and the comboNode to the renderTree
         this.add(this.layout);
+
+        this.afterModels();
+
 
     }
 
     PageView.prototype = Object.create(View.prototype);
     PageView.prototype.constructor = PageView;
+    
+    PageView.prototype.loadModels = function(){
+        var that = this;
+
+        // Models
+        this.model = new ThreadModel.Thread({
+            _id: this.thread_id
+        });
+        this.model.fetch({prefill: true});
+
+
+        // this._onRemoteRefresh = [];
+        // this._onRemoteRefresh.push(this.model);
+
+    };
+
+    PageView.prototype.afterModels = function(){
+        var that = this;
+
+        console.log(this.model);
+        console.log(this.model.populated);
+        this.model.populated().then(function(){
+
+            // Get related Emails for Thread
+            that.model._related.Email.populated().then(function(){
+                // console.log(this);
+                // console.log(that.model._related.Email.toJSON());
+                // console.log(that.model);
+                that.header.navBar.title.setContent(that.model._related.Email.length+ ' email'+(that.model._related.Email.length === 1 ? '':'s')+' in thread' );
+
+                // that.addEmails();
+                // debugger;
+            });
+            that.model.fetchRelated();
+
+            // // debugger;
+            // that.createDetailContent();
+            // that.DetailController.show(that.DetailView);
+
+            // Show user information
+            that.contentLightbox.show(that.PageLayout);
+            console.log(that.PageLayout.Views);
+
+
+            // // update going forward
+            // that.update_content();
+            // that.model.on('change', that.update_content.bind(that));
+            // that.vote_model.populated().then(function(){
+            //     that.vote_model.hasFetched = true;
+            //     that.update_content();
+            //     that.vote_model.on('change', that.update_content.bind(that));
+            // });
+
+        });
+
+    };
 
     PageView.prototype.createHeader = function(){
         var that = this;
+        
+        // Icons
 
-        // create the header bar
-        this.header = new StandardHeader2({
-            content: "Thread",
+        // -- settings/message (lightbox)
+        this.headerContent = new View();
+
+        // Share (details)
+
+        this.headerContent.ShareLinkController = new RenderController();
+        this.headerContent.ShareLinkController.getSize = function(){
+            return [60,undefined];
+        };
+
+        this.headerContent.ShareLink = new Surface({
+            content: '<i class="icon ion-share"></i>',
+            size: [60, undefined],
+            classes: ['header-tab-icon-text-big']
+        });
+        this.headerContent.ShareLink.on('longtap', function(){
+            Utils.Help('Contest/View/Menu');
+        });
+        this.headerContent.ShareLink.on('click', function(){
+            App.history.navigate('contest/share/' + that.contest_id);
+        });
+
+
+        // Menu
+
+        this.headerContent.MenuController = new RenderController();
+        this.headerContent.MenuController.getSize = function(){
+            return [60,undefined];
+        };
+
+        this.headerContent.Menu = new Surface({
+            content: '<i class="icon ion-navicon-round"></i>',
+            size: [60, undefined],
+            classes: ['header-tab-icon-text-big']
+        });
+        this.headerContent.Menu.on('longtap', function(){
+            Utils.Help('Contest/View/Menu');
+        });
+        this.headerContent.Menu.on('click', function(){
+
+            Utils.Popover.Buttons({
+                title: 'Additional Options',
+                buttons: [
+                // {
+                //     text: 'Share',
+                //     success: function(){
+                //         App.history.navigate('contest/share/' + that.contest_id);
+                //     }
+                // },
+                {
+                    text: 'Delete Choice',
+                    success: function(){
+
+                        // Utils.Popover.Alert('Not functioning','OK');
+                        // return;
+
+                        Utils.Notification.Toast('Deleting Choice');
+
+                        var data = {
+                            active: false
+                        }
+
+                        // that.headerContent.Menu.setContent('<i class="icon ion-ios7-checkmark"></i>');
+                        // that.headerContent.Menu.setClasses(['header-tab-icon-text-big','marked-complete']);
+
+                        App.history.back();
+
+                        that.model.set(data);
+                        that.model.save(data,{
+                            patch: true,
+                            // success: function(){
+                            //     that.model.fetch();    
+                            // }
+                        })
+                        .fail(function(){
+                            console.error('Failed saving active=false');
+                        })
+                        .then(function(){
+                            that.model.fetch();
+                            // that.contestContent.collection.fetch();
+                        });
+                    }
+                }]
+            });
+
+        });
+
+
+
+        // create the header
+        this.header = new StandardHeader({
+            content: 'Thread', // no header title
             classes: ["normal-header"],
-            backClasses: ["back-header"],
-            moreContent: false
+            backClasses: ["normal-header"],
+            moreClasses: ["normal-header"],
+            moreSurfaces: [
+                this.headerContent.ShareLinkController,
+                this.headerContent.MenuController
+            ]
+            // moreContent: false // '<span class="icon ion-refresh"></span>'
         }); 
-        this.header.on('back', function(){
-            window.history.go(-1);
+        this.header._eventOutput.on('back',function(){
+            App.history.back();
+        });
+        this.header.navBar.title.on('click',function(){
+            App.history.back();
         });
         this._eventOutput.on('inOutTransition', function(args){
             this.header.inOutTransition.apply(this.header, args);
         })
 
-        this.layout.header.add(this.header);
 
-    };
-
-    PageView.prototype.createSidebar = function(){
-        var that = this;
-
-        // // create the header bar
-        // this.header = new StandardHeader({
-        //     content: 'Dash',
-        //     classes: ["normal-header"],
-        //     backContent: false,
-        //     moreContent: false
-        // }); 
-        // this.header.navBar.title.on('click', function(){
-        //     window.history.go(-1);
-        // });
-        // this._eventOutput.on('inOutTransition', function(args){
-        //     this.header.inOutTransition.apply(this.header, args);
-        // })
-        
-        var maxWidth = window.innerWidth,
-            rightPadding = 20,
-            tabExtraWidth = 40,
-            tabWidth = maxWidth - rightPadding,
-            contentWidth = maxWidth - rightPadding - tabExtraWidth;
-
-        this.sidebar = new SequentialLayout();
-        this.sidebar.currentDragger = null;
-        this.sidebar.contentWidth = contentWidth;
-        this.sidebar.OriginMod = new StateModifier({
-            origin: [0, 1]
-        });
-        this.sidebar.Sequence = [];
-
-        // Sidebar bg
-        this.sidebar.Background = new Surface({
-            size: [undefined, undefined],
-            properties: {
-                backgroundColor: "white"
-            }
-        });
-
-        // Overlay for sidebar
-        // - below the menu though
-        this.sidebar.Overlay = new View();
-        this.sidebar.Overlay.SizeMod = new StateModifier({
-            size: [0,0]
-        });
-        this.sidebar.Overlay.OpacityMod = new Modifier({
-            opacity : function(){
-                // console.log(that.sidebar);
-                if(that.sidebar.currentDragger){
-                    var currentPosition = that.sidebar.currentDragger.position.get();
-                    return Utils.ratio_remap((currentPosition[0] / that.sidebar.contentWidth), [0,1],[0,0.7]);
-                    // return (currentPosition[0] / that.sidebar.contentWidth); // currentPosition[1]
-                }
-                // console.log(that.sidebar.curentDragger);
-                return 0;
-            }
-        });
-        this.sidebar.Overlay.Surface = new Surface({
-            size: [undefined, undefined],
-            properties: {
-                backgroundColor: "black"
-            }
-        });
-        this.sidebar.Overlay.add(this.sidebar.Overlay.SizeMod).add(this.sidebar.Overlay.OpacityMod).add(this.sidebar.Overlay.Surface);
-
-        // Items
-        _.each(_.range(5),function(i){
-
-            // Container for sideview
-            var temp = new View();
-            // temp.SizeMod = new StateModifier({
-            //     size: [window.innerWidth - 100, undefined],
-            // });
-            temp.TranslateMod = new Modifier({
-                transform: Transform.translate(-1 * (contentWidth), 0, 0)
-            });
-
-            // Tab
-            temp.tab = new View();
-            temp.tab.Surface = new Surface({
-                content: 'Opt',
-                size: [tabWidth, 40],
-                properties: {
-                    textAlign: "right",
-                    paddingRight: "2px",
-                    lineHeight: "40px",
-                    color: "white",
-                    backgroundColor: "hsl(" + (i * 360 / 40) + ", 100%, 50%)",
-                    // backgroundColor: "black",
-                    borderRadius: "0 3px 3px 0"
-                }
-            });
-            temp.tab.HeightMod = new StateModifier({
-                size: [tabWidth, 60]
-            });
-
-
-            temp.touchSync = new GenericSync({
-                "mouse"  : {},
-                "touch"  : {}
-            });
-            temp.position = new Transitionable([0,0]);
-
-            // temp.pipe(temp.touchSync);
-
-            // temp.pipe(that.contentScrollView);
-
-            temp.touchSync.on('start', function(data){
-                // Add the overlay to the content
-                // - don't want to accidentally press something
-                that.sidebar.currentDragger = temp;
-
-                // Clear other displayed ones
-                _.each(that.sidebar.Sequence, function(tmpView){
-                    if(tmpView !== temp){
-                        tmpView.position.tuckAway({});
-                    }
-                });
-
-                // Overlay sizes
-                that.layout.content.Overlay.SizeMod.setSize([undefined, undefined]);
-                that.sidebar.Overlay.SizeMod.setSize([undefined, undefined]);
-
-            });
-
-            temp.touchSync.on('update', function(data){
-                var currentPosition = temp.position.get(),
-                    currentAdded = currentPosition[0] + data.delta[0],
-                    newXPosition = 0;
-                if(currentAdded >= contentWidth){
-                    newXPosition = contentWidth;
-                } else {
-                    newXPosition = currentPosition[0] + data.delta[0];
-                }
-
-                temp.position.set([
-                    newXPosition,
-                    currentPosition[1] + data.delta[1]
-                ]);
-
-            });
-            temp.touchSync.on('end', function(data){
-                
-                // Resetting?
-                var velocity = data.velocity;
-                if(velocity && velocity[0] > 0){
-                    temp.position.extendOut(data);
-                } else {
-                    temp.position.resetToOriginal(data, true);
-                    temp.position.resetOthersToOriginal(data);
-                }
-            });
-            temp.touchSync.on('leave', function(data){
-                var velocity = data.velocity;
-                if(velocity && velocity[0] > 0){
-                    temp.position.extendOut(data);
-                } else {
-                    temp.position.resetToOriginal(data, true);   
-                    temp.position.resetOthersToOriginal(data);
-                }
-            });
-
-
-            temp.position.resetOthersToOriginal = function(){
-                // Clear other displayed ones
-                _.each(that.sidebar.Sequence, function(tmpView){
-                    if(tmpView !== temp){
-                        tmpView.position.resetToOriginal({});
-                    }
-                });
-
-                // Change the size to nothing
-                that.layout.content.Overlay.SizeMod.setSize([1,0]);
-            };
-
-            temp.position.resetToOriginal = function(data, callback){
-                // Resettting back to "semi-hidden"
-                var velocity = data.velocity || 0;
-                temp.position.set([0, 0], {
-                    method : 'spring',
-                    period : 150,
-                    dampingRatio: 0.9,
-                    velocity : velocity
-                }, function(){
-                    if(callback){
-                        that.sidebar.currentDragger = null;
-                    }
-                });
-
-            };
-            temp.position.tuckAway = function(data){
-                // Resettting back to "semi-hidden"
-                var velocity = data.velocity || 0;
-                var hideSize = -1 * (tabExtraWidth - 2);
-                if(that.sidebar.Sequence.indexOf(temp) >= that.sidebar.Sequence.indexOf(that.sidebar.currentDragger)){
-                    hideSize = -1 * (tabExtraWidth);
-                }
-                temp.position.set([hideSize, 0], {
-                    method : 'spring',
-                    period : 150,
-                    dampingRatio: 0.9,
-                    velocity : velocity
-                });
-
-            };
-            temp.position.extendOut = function(data){
-                // Extends out the view
-                var velocity = data.velocity || 0;
-                temp.position.set([contentWidth, 0], {
-                    method : 'spring',
-                    period : 150,
-                    dampingRatio: 0.9,
-                    velocity : velocity
-                });
-            };
-
-            temp.positionModifier = new Modifier({
-                transform : function(){
-                    var currentPosition = temp.position.get();
-                    return Transform.translate(currentPosition[0], 0, 0); // currentPosition[1]
-                }
-            });
-
-            temp.tab.add(temp.tab.Surface);
-            // temp.tab.Surface.pipe(temp.tab.draggable);
-            temp.tab.Surface.pipe(temp.touchSync);
-
-
-            // Content
-            temp.content = new View();
-            temp.content.SizeMod = new StateModifier({
-                size: [contentWidth, window.innerHeight - 20]
-            });
-            temp.content.Surface = new Surface({
-                size: [undefined, undefined],
-                content: "sideview content here",
-                properties: {
-                    backgroundColor: "hsl(" + (i * 360 / 40) + ", 100%, 50%)",
-                    color: "#444",
-                    borderColor: "#222"
-                }
-            });
-
-            temp.content.Surface.pipe(temp.touchSync);
-            // temp.content.pipe(temp.touchSync);
-
-
-            temp.content.add(temp.content.SizeMod).add(temp.content.Surface);
-
-            // Only as high as the tab height
-            var node = temp.add(temp.TranslateMod).add(temp.tab.HeightMod).add(temp.positionModifier);
-            node.add(temp.content);
-            node.add(temp.tab)
-
-            // temp.tab.add(surface.View.TransitionModifier).add(temp.tab.draggable).add(temp.tab.Surface);
-
-            
-            
-
-            // temp.add(temp.SizeMod).add(temp.OriginMod).add(temp.Surface);
-
-            that.sidebar.Sequence.push(temp);
-        });
-
-        this.sidebar.sequenceFrom(this.sidebar.Sequence);
-
-        // this.layout.side.add(this.sidebar.Background);
-        this.layout.side.add(this.sidebar.Overlay);
-        this.layout.side.add(this.sidebar.OriginMod).add(this.sidebar);
+        // Attach header to the layout        
+        this.layout.header.add(Utils.usePlane('header')).add(this.header);
 
     };
 
     PageView.prototype.createContent = function(){
         var that = this;
+
+        // create the content
+        this.PageLayout = new LayoutBuilder({
+            size: [undefined, undefined],
+            scroller: {
+                direction: 1, // vertical
+                // ratios: [true, 1, true],
+                sequenceFrom: []
+            }
+        });
+        this.PageLayout.Views = [];
+            
+        this.DetailController = new RenderController({
+            showingSize: true
+        });
+        // this.PageLayout.Views.push(this.DetailController);
         
-        // create the scrollView of content
-        this.contentScrollView = new ScrollView(App.Defaults.ScrollView);
-        this.scrollSurfaces = [];
+        // this.createDetails();
+        // this.createImageComparison();
+        // this.createVotingBar(); // and Results
+        this.createEmailList();
+        // this.createContestVisibleVotes();
 
-        // link endpoints of layout to widgets
+        this.PageLayout.scroller.sequenceFrom(this.PageLayout.Views);
 
-        // // Add surfaces to content (buttons)
-        // this.addSurfaces();
+        // Content state modifier
+        this.ContentStateModifier = new StateModifier();
 
-        // Sequence
-        this.contentScrollView.sequenceFrom(this.scrollSurfaces);
-
-
-        // var container = new ContainerSurface({
-        //     size: [undefined, undefined],
-        //     properties:{
-        //         overflow:'hidden'
-        //     }
-        // })
-        // container.add(this.contentScrollView)
-
-        // Content bg
-        // - for handling clicks
-        this.contentBg = new Surface({
-            size: [undefined, undefined],
+        // Content Lightbox
+        // - waiting for the user to load a bit
+        this.contentLightbox = new RenderController();
+        // this.contentLightbox.getSize = function(){
+        //     return 
+        // }
+        this.loadingUser = new View();
+        this.loadingUser.StateModifier = new StateModifier({
+            align: [0.5, 0.5],
+            origin: [0.5, 0.5]
+        });
+        this.loadingUser.Surface = new Surface({
+            content: '<i class="icon ion-loading-c"></i>',
+            size: [true, true],
             properties: {
-                zIndex: "-1"
+                fontSize: "40px",
+                textAlign: "center",
+                color: "#444",
+                lineHeight: "50px"
             }
         });
-        this.contentBg.on('click', function(){
-            window.history.go(-1);
-        });
+        this.loadingUser.add(this.loadingUser.StateModifier).add(this.loadingUser.Surface);
+        this.contentLightbox.show(this.loadingUser);
 
-        // Content
-        this.layout.content.StateModifier = new StateModifier({
-            // origin: [0, 1],
-            // size: [undefined, undefined]
-        });
-        this.layout.content.SizeModifier = new StateModifier({
-            size: [undefined, undefined]
-        });
-
-        // Overlay for content
-        // - hiding on menu out
-        this.layout.content.Overlay = new View();
-        this.layout.content.Overlay.SizeMod = new StateModifier({
-            size: [0,0]
-        });
-        this.layout.content.Overlay.OpacityMod = new Modifier({
-            opacity : function(){
-                // console.log(that.sidebar);
-                if(that.sidebar.currentDragger){
-                    var currentPosition = that.sidebar.currentDragger.position.get();
-                    return Utils.ratio_remap((currentPosition[0] / that.sidebar.contentWidth), [0,1],[0,0.7]);
-                    // return (currentPosition[0] / that.sidebar.contentWidth); // currentPosition[1]
-                }
-                // console.log(that.sidebar.curentDragger);
-                return 0;
-            }
-        });
-        this.layout.content.Overlay.Surface = new Surface({
-            size: [undefined, undefined],
-            properties: {
-                backgroundColor: "black"
-            }
-        });
-        this.layout.content.Overlay.add(this.layout.content.Overlay.SizeMod).add(this.layout.content.Overlay.OpacityMod).add(this.layout.content.Overlay.Surface);
-
-        // Now add content
-        this.layout.content.add(this.contentBg);
-        this.layout.content.add(this.layout.content.SizeModifier).add(this.layout.content.StateModifier).add(this.contentScrollView);
-        this.layout.content.add(this.layout.content.Overlay);
-        // this.layout.content.add(this.layout.content.SizeModifier).add(this.layout.content.StateModifier).add(container);
-
+        // this.layout.content.add(this.ContentStateModifier).add(this.mainNode);
+        this.layout.content.add(this.ContentStateModifier).add(this.contentLightbox);
 
     };
 
-    PageView.prototype.addEmails = function() {
+    PageView.prototype.createDetailContent = function(){
         var that = this;
 
-        this.model._related.Email.toJSON().forEach(function(email, index){
+        debugger;
 
-            // SequentialLayout to hold Header(To,From,Actions),Body, Signature
-            var EmailView = new View();
-            EmailView.TransitionModifier = new StateModifier({
-                // transform: Transform.translate(window.innerWidth,0,0)
-                transform: Transform.translate(0,0,0)
-            });
-            var EmailsSeqLayout = new SequentialLayout();
-            EmailView.EmailsSeqLayout = EmailsSeqLayout;
+        var Model = this.model;
 
-            var EmailSeq = [];
+        var contestView = new View(),
+            name = Model.get('title') || '&nbsp;none';
 
-            var views = {};
+        var visitContest = function(){
+            // App.history.navigate('contest/' + Model.get('_id'));
+        };
 
-            // Create the From
-            views.From = new View();
-            views.From.Surface = new Surface({
-                content: Handlebars.helpers.personName(email.original.headers.From_Parsed[0]),
-                size: [undefined, 20],
-                classes: [],
-                properties: {
-                    color: "black",
-                    backgroundColor: "#f8f8f8",
-                    lineHeight: "20px"
-                }
-            });
-            views.From.add(views.From.Surface);
+        contestView.Layout = new LayoutBuilder({
+            sequential: {
+                direction: 1,
+                sequenceFrom: [{
+                    surface: {
+                        key: 'BottomSpacer',
+                        surface: new Surface({
+                            content: '<br /><br />',
+                            size: [undefined, true],
+                            classes: ['contest-list-item-bottomspacer']
+                        }),
+                        click: visitContest,
+                        pipe: that.contentLayout
+                    }
+                },{
+                    flexible: {
+                        key: 'Top',
+                        direction: 0,
+                        ratios: [true,1],
+                        size: [undefined, true],
+                        sequenceFrom: [{
+                            surface: {
+                                key: 'User',
+                                surface: new Surface({
+                                    content: Model.get('user_id._id') == App.Data.User.get('_id') ? 'You' : Model.get('user_id.profile.name').substr(0,6),
+                                    wrap: '<div class="ellipsis-all"></div>',
+                                    size: [true, true],
+                                    classes: ['contest-list-item-user'].concat(Model.get('user_id._id') == App.Data.User.get('_id') ? ['is-me']:[])
+                                }),
+                                click: visitContest,
+                                pipe: that.contentLayout
+                            }
+                        },{
+                            surface: {
+                                key: 'Title',
+                                surface: new Surface({
+                                    content: Model.get('details.occasion'),
+                                    size: [undefined, true],
+                                    classes: ['contest-list-item-title']
+                                }),
+                                click: visitContest,
+                                pipe: that.contentLayout
+                            }
+                        }]
+                    }
+                },{
+                    surface: {
+                        key: 'Datetime',
+                        surface: new Surface({
+                            content: moment(Model.get('created')).format('dd, MMM D'),
+                            size: [undefined, true],
+                            classes: ['contest-list-item-datetime']
+                        }),
+                        click: visitContest,
+                        pipe: that.contentLayout
+                    }
+                },{
 
-            views.From.Surface.pipe(that.contentScrollView);
+                    // Should have a RenderController here
+                    // - wait for both images to load before showing them! 
+                    flexible: {
+                        key: 'Images',
+                        direction: 0,
+                        ratios: [1,1],
+                        size: [undefined, true],
+                        sequenceFrom: [[{
+                            surface: {
+                                key: 'Image1',
+                                margins: [0,5,0,10],
 
-            // Cc
-            // Bcc
+                                mods: [{
+                                    size: function(val){
+                                        var w = contestView.Layout.sequential.Images.Image1.getSize(val)[0];
+                                        // console.log(w);
+                                        return [undefined, w];
+                                    }
+                                }],
 
-            // console.log(Handlebars);
-            // console.log(Handlebars.helpers.personName(email.original.headers.From_Parsed[0]));
-
-            // Pretty headers surface
-            views.PrettyHeaders = new View();
-            views.PrettyHeaders.Surface = new ModifiedSurface({
-                content: JSON.stringify(email.original.headers),
-                size: [undefined, true]
-            });
-            views.PrettyHeaders.DisplayMod = new StateModifier();
-
-            views.PrettyHeaders.add(views.PrettyHeaders.DisplayMod).add(views.PrettyHeaders.Surface.RealSizeMod).add(views.PrettyHeaders.Surface);
-            views.PrettyHeaders.Surface.pipe(that.contentScrollView);
-
-            views.Body = new View();
-            views.Body.Surface = new ModifiedSurface({
-                content: that.display_bodies(email),
-                // content: nl2br(emails[index]),
-                // size: [(window.innerWidth) - ((window.innerWidth / 5) * index), true],
-                size: [window.innerWidth - 10, true],
-                classes: ["email-list-item"],
-                properties: {
-                    lineHeight: '20px',
-                    padding: '5px',
-                    // borderRadius: "3px",
-                    backgroundColor: "white"
-                    // backgroundColor: "hsl(" + ((index+1) * 360 / 40) + ", 100%, 50%)",
-                }
-            });
-            views.Body.Surface.pipe(that.contentScrollView);
-            // views.Body.Surface.on('sizeUpdated', function(newSize){
-
-            //     console.info('deployed newSize in Thread', newSize);
-            //     // console.log(this);
-            //     // console.log(this._size);
-            //     // console.log(this.getSize(true));
-
-            //     var paddingSize = 10;
-            //     this.View.PaddingModifier.setSize([undefined, newSize[1] + paddingSize]);
-
-            //     // console.log(newSize[1] + paddingSize);
-            //     // this.View.bgSizeModifier.setSize([undefined, newSize[1]]);
-
-            //     // surface.PaddingModifier.setSize([undefined, surface.getSize()[1]]);
-            // }.bind(views.Body));
-
-            views.Body.Email = email;
-            views.Body.Surface.Email = email;
-
-            // views.Body.bg = new Surface({
-            //     size: [undefined, undefined],
-            //     properties: {
-            //         // backgroundColor: "blue",
-            //         zIndex: "-1"
-            //     }
-            // });
-            // views.Body.bg.pipe(that.contentScrollView);
-
-            // views.Body.bg.SizeModifier = new StateModifier();
-            // views.Body.TransitionModifier = new StateModifier({
-            //     transform: Transform.translate(window.innerWidth,0,0)
-            // });
-            // views.Body.PaddingModifier = new StateModifier({
-            //     // will be changing size
-            //     // size: [window.innerWidth - 20, true]
-            // });
-            // views.Body.OriginModifier = new StateModifier({
-            //     origin: [0.5, 0.5]
-            //     // will be changing size
-            //     // size: [window.innerWidth - 20, true]
-            // });
-            // var node = surface.View.add(surface.View.TransitionModifier).add(surface.View.PaddingModifier);
-            // node.add(surface.View.bg);
-            // node.add(surface.View.OriginModifier).add(surface);
-
-            views.Body.add(views.Body.Surface.RealSizeMod).add(views.Body.Surface);
-
-            views.Spacer = new View();
-            views.Spacer.Surface = new Surface({
-                size: [undefined, 20]
-            });
-            views.Spacer.add(views.Spacer.Surface);
-            views.Spacer.Surface.pipe(that.contentScrollView);
-
-            EmailSeq.push(views.From);
-            EmailSeq.push(views.Body);
-            EmailSeq.push(views.Spacer);
-
-            // Add views to SeqLayout object for accessing easily later
-            EmailsSeqLayout.views = views;
-
-
-            EmailsSeqLayout.sequenceFrom(EmailSeq);
-
-            // Transform in
-            // - not sure if it has even been displayed
-            // that.whenPageVisible(function(){
-            if(that._whenPageVisible === true){
-                Timer.setTimeout(function(){
-                    this.TransitionModifier.setTransform(Transform.translate(0,0,0), { duration: 500, curve: 'easeOutBounce' });
-                }.bind(EmailView), index * 100);
-                console.log('transform in from PageVisible');
+                                surface: new ImageSurface({
+                                    content: Model.get('images')[0].urls.thumb300x300,
+                                    size: [undefined,undefined],
+                                    classes: ['contest-list-item-image']
+                                }),
+                                click: visitContest,
+                                pipe: that.contentLayout
+                            }
+                        },{
+                            plane: [null,2],
+                            surface: {
+                                key: 'Image1Votes',
+                                margins: [0,5,0,10],
+                                mods: [{
+                                    size: function(val){
+                                        // get the rendered node size, not just the image size
+                                        // - or if using margins (above), then get the Image1 size, I think
+                                        return [undefined, contestView.Layout.sequential.Images.Image1.getSize(val)[0]];
+                                    }
+                                }],
+                                surface: new Surface({
+                                    content: function(){
+                                        return Model.get('results')[Model.get('images')[0]._id];
+                                    },
+                                    wrap: '<div> <div></div></div>',
+                                    size: [undefined, undefined],
+                                    classes: ['contest-list-item-votes']
+                                }),
+                                events: function(node){
+                                    var obj = this;
+                                    Model.on('change', function(){
+                                        obj.surface.updateContent();
+                                    });
+                                },
+                                click: visitContest,
+                                pipe: that.contentLayout
+                            }
+                        }],[{
+                            surface: {
+                                key: 'Image2',
+                                margins: [0,10,0,5],
+                                mods: [{
+                                    size: function(val){
+                                        var w = contestView.Layout.sequential.Images.Image2.getSize(val)[0];
+                                        return [undefined, w];
+                                    }
+                                }],
+                                surface: new ImageSurface({
+                                    content: Model.get('images')[1].urls.thumb300x300,
+                                    size: [undefined, undefined],
+                                    classes: ['contest-list-item-image']
+                                }),
+                                click: visitContest,
+                                pipe: that.contentLayout
+                            }
+                        },{
+                            plane: [null,2],
+                            surface: {
+                                key: 'Image2Votes',
+                                margins: [0,10,0,5],
+                                mods: [{
+                                    size: function(val){
+                                        // get the rendered node size, not just the image size
+                                        // - or if using margins (above), then get the Image2 size, I think
+                                        return contestView.Layout.sequential.Images.Image2.getSize(val);
+                                    }
+                                }],
+                                surface: new Surface({
+                                    content: function(){
+                                        return Model.get('results')[Model.get('images')[1]._id];
+                                    },
+                                    wrap: '<div> <div></div></div>',
+                                    size: [undefined, undefined],
+                                    classes: ['contest-list-item-votes']
+                                }),
+                                events: function(node){
+                                    var obj = this;
+                                    Model.on('change', function(){
+                                        obj.surface.updateContent();
+                                    });
+                                },
+                                click: visitContest,
+                                pipe: that.contentLayout
+                            }
+                        }]]
+                    }
+                }]
             }
-            // });
+        });
 
-            // // surface.pipe(surface.draggable)
-            // surface.pipe(that.contentScrollView);
-            EmailView.add(EmailView.TransitionModifier).add(EmailsSeqLayout);
-            // EmailView.TransitionModifier.add(EmailsSeqlayout)
+        contestView.Layout.Model = Model;
+
+        this.DetailView = contestView.Layout;
+
+    };
+// 
+    PageView.prototype.createEmailList = function(){
+        var that = this;
+
+        // Content
+        this.ThreadEmailList = new ThreadEmailListView({
+            model: this.model
+        });
+        this._subviews.push(this.ThreadEmailList);
+        this.ThreadEmailList.View = new View();
+        this.ThreadEmailList.View.add(Utils.usePlane('content')).add(this.ThreadEmailList);
+        // this.todoLayout.Layout.Views.push(this.ThreadEmailList.View);
 
 
-            that.scrollSurfaces.push(EmailView);
+        // // Sequence everything
+        // this.todoLayout.Layout.sequenceFrom(this.todoLayout.Layout.Views);
 
-            // window.setTimeout(function(){
-            //     var newSize = this.getSize(true);
-            //     this.PaddingModifier.setSize([undefined, newSize[1] + 25]);
-            // }.bind(surface), 100);
+        // this.todoLayout.add(this.todoLayout.Layout);
 
-            // surface.touchSync = new GenericSync({
-            //     "mouse"  : {},
-            //     "touch"  : {}
-            // });
-            // surface.position = new Transitionable([0,0]);
+        this.PageLayout.Views.push(this.ThreadEmailList.View);
 
-            // surface.pipe(surface.touchSync);
-            // surface.pipe(that.contentScrollView);
+    };
 
-            // surface.touchSync.on('update', function(data){
-            //     var currentPosition = surface.position.get();
-            //     surface.position.set([
-            //         currentPosition[0] + data.delta[0],
-            //         currentPosition[1] + data.delta[1]
-            //     ]);
-            // });
+    PageView.prototype.refreshData = function() {
+        try {
+            this.model.fetch();
+            this.tabBar.Layout.Stories.GameStoryListView.collection.fetch();
+        }catch(err){};
+    };
 
-            // surface.draggable.on('end', function(data){
-            //     // transition the position back to [0,0] with a bounce
-            //     // position.set([0,0], {curve : 'easeOutBounce', duration : 300});
-            //     var velocity = data.velocity;
-            //     surface.draggable.setPosition([0, 0], {
-            //         method : 'spring',
-            //         period : 150,
-            //         velocity : velocity
+    PageView.prototype.remoteRefresh = function(snapshot){
+        var that = this;
+        Utils.RemoteRefresh(this,snapshot);
+    };
+
+    PageView.prototype.update_content = function(){
+        var that = this;
+
+        console.info('update_content');
+
+
+        if(that.model != undefined && that.model.hasFetched){
+
+            // // Menu and Share Link in header
+            // if(that.model.get('user_id._id') == App.Data.User.get('_id')){
+            //     that.headerContent.ShareLinkController.show(that.headerContent.ShareLink);
+            //     that.headerContent.MenuController.show(that.headerContent.Menu);
+            // }
+
+
+            // // title
+            // this.TopBarMaximized.sequential.Title.setContent(that.model.get('title'));
+            // this.TopBarMinimized.flexible.Title.setContent(that.model.get('title'));
+
+            // // details/description
+            // this.Details.setContent(that.model.get('details.occasion'));
+
+            // // this.TopBarMinimized.flexible.Title.setContent(that.model.get('title'));
+
+            // console.info('update_content');
+            // console.log(that.model.get('tags'));
+
+            // // "complete" tag
+            // this.headerContent.Complete.Lightbox.show(this.headerContent.MarkComplete);
+            // if(that.model.get('tags') && that.model.get('tags').indexOf('complete') !== -1){
+            //     // complete
+            //     this.headerContent.MarkComplete.setContent('<i class="icon ion-ios7-checkmark"></i>');
+            //     this.headerContent.MarkComplete.setClasses(['header-tab-icon-text-big','marked-complete']);
+            // } else {
+            //     // Not complete
+            //     this.headerContent.MarkComplete.setContent('<i class="icon ion-ios7-checkmark-outline"></i>');
+            //     this.headerContent.MarkComplete.setClasses(['header-tab-icon-text-big']);
+            // }
+
+            // // Invoicing
+            // this.headerContent.Invoice.Lightbox.show(this.headerContent.ViewInvoice);
+            // if(that.model.get('invoice_id')){
+            //     // complete
+            //     this.headerContent.ViewInvoice.setContent('<i class="icon ion-social-usd"></i>');
+            //     this.headerContent.ViewInvoice.setClasses(['header-tab-icon-text-big','marked-complete']);
+            // } else {
+            //     // Not complete
+            //     this.headerContent.ViewInvoice.setContent('<i class="icon ion-social-usd"></i>');
+            //     this.headerContent.ViewInvoice.setClasses(['header-tab-icon-text-big','marked-incomplete']);
+            // }
+
+
+            // // Images
+            // var imgs = that.model.get('images');
+            // if(imgs && imgs.length && that.last_image_order != imgs){
+            //     // at least one, or a new order
+            //     that.last_image_order = imgs;
+
+            //     imgs.forEach(function(imgInfo,i){
+            //         that.ImageComparison.flexible['Image'+(i+1)].setContent('<img src="'+imgInfo.urls.thumb300x300+'" />');
+
+            //         // Update OptionButtons
+            //         that.VotingOptions.flexible['Option' + (i+1)].image_id = imgInfo._id;
+
             //     });
 
-            // });
+            //     // this.headerContent.ViewInvoice.setContent('<i class="icon ion-social-usd"></i>');
+            //     // this.headerContent.ViewInvoice.setClasses(['header-tab-icon-text-big','marked-complete']);
+            // } else {
+            //     // // No images
+            //     // this.headerContent.ViewInvoice.setContent('<i class="icon ion-social-usd"></i>');
+            //     // this.headerContent.ViewInvoice.setClasses(['header-tab-icon-text-big','marked-incomplete']);
+            // }
 
-            // surface.View.positionModifier = new Modifier({
-            //     transform : function(){
-            //         var currentPosition = surface.position.get();
-            //         return Transform.translate(currentPosition[0], 0, 0); // currentPosition[1]
+            // // Voting Results
+            // if(that.model.get('results')){
+            //     var resultToSurface = {};
+
+            //     imgs.forEach(function(imgInfo,i){
+            //         // resultToSurface[imgInfo._id] = that.VotingResults.flexible.Result[i+1];
+            //         that.VotingResults.flexible['Result' + (i+1)].setContent( (that.model.get('results.' + imgInfo._id) || 0) + ' votes' );
+            //     });
+
+            // }
+
+            // // Voting Buttons
+            // if(that.model.get('results')){
+            //     var resultToSurface = {};
+
+            //     imgs.forEach(function(imgInfo,i){
+            //         // resultToSurface[imgInfo._id] = that.VotingResults.flexible.Result[i+1];
+            //         that.VotingResults.flexible['Result' + (i+1)].setContent( (that.model.get('results.' + imgInfo._id) || 0) + ' votes' );
+            //     });
+
+            // }
+
+            // // Voting Bar show/hide
+            // if(that.model.get('user_id._id') == App.Data.User.get('_id')){
+            //     that.VotingBar.show(that.VotingResults);
+            // } else {
+
+            //     // Show either that I can vote, or the "thanks for voting" box
+            //     if(that.vote_model.hasFetched){
+            //         if(that.vote_model.get('_id')){
+            //             that.VotingBar.show(that.VotingDone);
+            //             // that.VotingBar.hide();
+            //         } else {
+            //             that.VotingBar.show(that.VotingOptions);
+            //         }
             //     }
-            // });
+            // }
+                
 
-            // surface.View.add(surface.View.positionModifier).add(surface);
 
-        });
+            // // tags
+            // var tagContent = '';
+            // if(that.model.get('tags') && that.model.get('tags').length > 0){
+            //     tagContent += '<div>';
+            //     that.model.get('tags').forEach(function(tmpTag){
+            //         tagContent += '<span class="label">'+S(tmpTag)+'</span>';
+            //     });
+            // } else {
+            //     tagContent += '<div>';
+            //         tagContent += 'no tags';
+            //     tagContent += '</div>';
+            // }
+            // this.TopBarMaximized.Tags.Surface.setContent(tagContent);
 
-        that.contentScrollView.sequenceFrom(that.scrollSurfaces);
-
-    };
-
-    PageView.prototype.display_bodies = function(Email, no_nl2br) {
-        // Display the first ParsedData entry
-        // - hide any additional entries
-
-        no_nl2br = no_nl2br == true ? true : false;
-
-        var parsedData = Email.original.ParsedData;
-        // console.dir(Email.original.ParsedData);
-        var tmp = '';
-
-        // Building sections
-        // - now incorporates Edited Emails (minimail only)
-        var i = 0;
-
-        _.each(parsedData,function(pieceOfData, index){
-            i++;
-            var content = '';
-            
-            pieceOfData.Body = htmlEntities(pieceOfData.Body);
-
-            try {
-                if(pieceOfData.Body.length > 0){
-                    content = no_nl2br ? pieceOfData.Body : nl2br(pieceOfData.Body, false);
-
-                    if($.trim(content) == ""){
-                        // Missing content, probably HTML content
-                        // content = "[Email Content as HTML]"; // content non-existant, need to show a button for HTML view?
-                        content = '<button class="btn btn-info view-html-email">View Fancy Email</button>';
-                    }
-
-                    tmp += '<div class="ParsedDataContent" data-level="'+index+'">'+content+'</div>';
-                    // tmp += '<div class="signature">' + nl2br(pieceOfData.Signature) + '</div>';
-                    // content += '<div class="signature">' + nl2br(pieceOfData.Signature) + '</div>';
-                    // go to next parsedData
-
-                    return tmp;
-                } else {
-                    // pieceOfData.Data = htmlEntities(pieceOfData.Data);
-                    content = pieceOfData.Data;
-                    content = $.trim(content);
-                    content = no_nl2br ? content : nl2br(content,false);
-                    
-                }
-            } catch(err){
-                // console.log(parsedData[x]);
-                // pieceOfData.Data = htmlEntities(pieceOfData.Data);
-                content = pieceOfData.Data;
-                content = $.trim(content);
-                // console.log(content);
-                // debugger;
-                content = no_nl2br ? content : nl2br(content,false);
-
-                if($.trim(content) == ""){
-                    // Missing content, probably HTML content
-                    // content = "[Email Content as HTML]";  // content non-existant, need to show a button for HTML view?
-                    content = '<button class="btn btn-info view-html-email">View Fancy Email</button>';
-                }
-                // debugger;
-            }
-
-            tmp += '<div class="ParsedDataContent" data-level="'+index+'">'+content+'</div>';
-            
-        });
-
-        // Clickable selector to see the rest of the conversation
-        // - only if the conversation is much longer
-        if (i > 1){
-            //tmp += '<div class="ParsedDataShowAll"><span>show '+ (i-1) +' previous</span></div>';
-            tmp += '<div class="ParsedDataShowAll clearfix"><span class="expander">...</span><span class="edit">E</span></div>';
         }
 
-        // console.log(Handlebars);
-        // return new Handlebars.SafeString(tmp);
-        // return $('<div/>').text(tmp).html();
-        // debugger;
-        return tmp;
-
     };
+
+    PageView.prototype.uploadMedia = function(imageURI){
+        var that = this;
+
+        Utils.Notification.Toast('Uploading');
+
+        console.log('uploading...');
+        console.log(this.player_id);
+        console.log({
+            token : App.Data.UserToken,
+            // player_id : this.player_id,
+            extra: {
+                "description": "Uploaded from my phone testing 234970897"
+            }
+        });
+
+        var ft = new FileTransfer(),
+            options = new FileUploadOptions();
+
+        options.fileKey = "file";
+        options.fileName = 'filename.jpg'; // We will use the name auto-generated by Node at the server side.
+        options.mimeType = "image/jpeg";
+        options.chunkedMode = false;
+        options.params = {
+            token : App.Data.UserToken,
+            contest_id: that.contest_id,
+            extra: {
+                "description": "Uploaded from my phone testing 193246"
+            }
+        };
+
+        ft.onprogress = function(progressEvent) {
+            
+            if (progressEvent.lengthComputable) {
+                // loadingStatus.setPercentage(progressEvent.loaded / progressEvent.total);
+                // console.log('Percent:');
+                // console.log(progressEvent.loaded);
+                // console.log(progressEvent.total);
+                console.log((progressEvent.loaded / progressEvent.total) * 100);
+                Utils.Notification.Toast((Math.floor((progressEvent.loaded / progressEvent.total) * 1000) / 10).toString() + '%');
+            } else {
+                // Not sure what is going on here...
+                // loadingStatus.increment();
+                console.log('not computable?, increment');
+            }
+        };
+        ft.upload(imageURI, App.Credentials.server_root + "contestcontent/media",
+            function (e) {
+                // getFeed();
+                // alert('complete');
+                // alert('upload succeeded');
+                Utils.Notification.Toast('Upload succeeded');
+                Utils.Notification.Toast('~10 seconds to process');
+
+                // update collection
+                Timer.setTimeout(function(){
+                    that.contestContent.collection.fetch();
+                },5000);
+
+            },
+            function (e) {
+                console.error(e);
+                Utils.Notification.Toast('Upload failed');
+            }, options);
+    };
+
 
     PageView.prototype.inOutTransition = function(direction, otherViewName, transitionOptions, delayShowing, otherView, goingBack){
         var that = this;
 
+        var args = arguments;
+
         this._eventOutput.emit('inOutTransition', arguments);
+
+        // emit on subviews
+        _.each(this._subviews, function(obj, index){
+            obj._eventInput.emit('inOutTransition', args);
+        });
 
         switch(direction){
             case 'hiding':
                 switch(otherViewName){
 
+                    case 'ContestList':
+                        // Overwriting and using default identity
+                        transitionOptions.outTransform = Transform.identity;
+
+                        Timer.setTimeout(function(){
+
+                            // Hide
+                            that.ContentStateModifier.setOpacity(0, transitionOptions.outTransition);
+
+                        }, delayShowing);
+
+                        break;
+
+
                     default:
                         // Overwriting and using default identity
                         transitionOptions.outTransform = Transform.identity;
 
-                        var baseTransitionDuration = 300;
-                        transitionOptions.outTransition = { 
-                            duration: (that.scrollSurfaces.length * 50) + baseTransitionDuration,
-                            curve: 'linear'
-                        };
+                        // Hiding the sideView
+                        // this.sideView.OpacityModifier.setOpacity(0);
 
-                        // Hide/move elements
+                        // Content
                         Timer.setTimeout(function(){
-                            
                             // // Fade header
                             // that.header.StateModifier.setOpacity(0, transitionOptions.outTransition);
 
-                            // Slide content down
-                            that.scrollSurfaces.forEach(function(surfaceView, index){
-                                Timer.setTimeout(function(oldIndex){
-                                    // console.log(oldIndex, index);
-                                    // var transition = _.clone(transitionOptions.outTransition);
-                                    // transition.duration = transition.duration - (oldIndex * 50 );//(Math.floor(Math.random() * 100) + 1);
-                                    // console.log(transition.duration);
-
-                                    surfaceView.TransitionModifier.setTransform(Transform.translate(window.innerWidth,0,0), {
-                                        duration: baseTransitionDuration,
-                                        curve: 'easeIn'
-                                    }); //transition);
-                                }.bind(surfaceView, index), 50 * index); //Math.floor(Math.random() * 100) + 1);
-                            }); 
-
-                            // Clear other displayed ones
-                            _.each(that.sidebar.Sequence, function(tmpView){
-                                tmpView.position.tuckAway({});
-                            });
-
-                            // if(goingBack){
-                            //     that.layout.content.StateModifier.setTransform(Transform.translate(window.innerWidth,0,0), transitionOptions.outTransition);
-                            // } else {
-                            //     that.layout.content.StateModifier.setTransform(Transform.translate(window.innerWidth * -1,0,0), transitionOptions.outTransition);
-                            // }
+                            that.ContentStateModifier.setTransform(Transform.translate((window.innerWidth * (goingBack ? 1.5 : -1.5)),0,0), transitionOptions.outTransition);
 
                         }, delayShowing);
 
@@ -811,10 +806,32 @@ define(function(require, exports, module) {
                 break;
             case 'showing':
                 if(this._refreshData){
-                    // window.setTimeout(that.refreshData.bind(that), 1000);
+                    Timer.setTimeout(this.refreshData.bind(this), 1000);
                 }
                 this._refreshData = true;
                 switch(otherViewName){
+
+                    case 'ContestList':
+
+                        // No animation by default
+                        transitionOptions.inTransform = Transform.identity;
+
+                        // // Default header opacity
+                        // that.header.StateModifier.setOpacity(0);
+
+                        // Default opacity
+                        that.ContentStateModifier.setOpacity(0);
+
+                        // Content
+                        // - extra delay
+                        Timer.setTimeout(function(){
+
+                            // Bring content back
+                            that.ContentStateModifier.setOpacity(1, transitionOptions.inTransition);
+
+                        }, delayShowing + transitionOptions.outTransition.duration);
+
+                        break;
 
                     default:
 
@@ -824,62 +841,15 @@ define(function(require, exports, module) {
                         // // Default header opacity
                         // that.header.StateModifier.setOpacity(0);
 
-                        // // Default position
-                        // if(goingBack){
-                        //     that.layout.content.StateModifier.setTransform(Transform.translate(window.innerWidth * -1,0,0));
-                        // } else {
-                        //     that.layout.content.StateModifier.setTransform(Transform.translate(window.innerWidth,0,0));
-                        // }
-
-                        // Header
-                        // - no extra delay
-                        Timer.setTimeout(function(){
-
-                            // // Change header opacity
-                            // that.header.StateModifier.setOpacity(1, transitionOptions.outTransition);
-
-                        }, delayShowing);
-
-                        // // Content
-                        // // - extra delay for content to be gone
-                        // window.setTimeout(function(){
-
-                        //     // // Bring map content back
-                        //     // that.layout.content.StateModifier.setTransform(Transform.translate(0,0,0), transitionOptions.inTransition);
-
-                        //     // Bring back each
-                        //     that.scrollSurfaces.forEach(function(surfaceView, index){
-                        //         Timer.setTimeout(function(){
-                        //             surfaceView.TransitionModifier.setTransform(Transform.translate(0,0,0), transitionOptions.inTransition);
-                        //         },50 * index);
-                        //     }); 
-
-
-                        // }, delayShowing + transitionOptions.outTransition.duration);
+                        that.ContentStateModifier.setTransform(Transform.translate((window.innerWidth * (goingBack ? -1.5 : 1.5)),0,0));
 
                         // Content
                         // - extra delay for content to be gone
                         Timer.setTimeout(function(){
 
-                            // // Bring map content back
-                            // that.layout.content.StateModifier.setTransform(Transform.translate(0,0,0), transitionOptions.inTransition);
+                            that.ContentStateModifier.setTransform(Transform.translate(0,0,0), transitionOptions.outTransition);
 
-                            // Bring back each
-                            that.scrollSurfaces.forEach(function(surfaceView, index){
-                                console.log(1);
-                                Timer.setTimeout(function(){
-                                    surfaceView.TransitionModifier.setTransform(Transform.translate(0,0,0), transitionOptions.inTransition);
-                                },50 * index);
-                            }); 
-
-                            // Clear other displayed ones
-                            _.each(that.sidebar.Sequence, function(tmpView){
-                                tmpView.position.resetToOriginal({});
-                            });
-
-                            console.log(that.scrollSurfaces);
-
-                        }, delayShowing);
+                        }, delayShowing); // + transitionOptions.outTransition.duration);
 
 
                         break;
@@ -891,15 +861,9 @@ define(function(require, exports, module) {
     };
 
 
-
     PageView.DEFAULT_OPTIONS = {
         header: {
-            size: [undefined, 50],
-            // inTransition: true,
-            // outTransition: true,
-            // look: {
-            //     size: [undefined, 50]
-            // }
+            size: [undefined, 50]
         },
         footer: {
             size: [undefined, 0]
@@ -913,19 +877,5 @@ define(function(require, exports, module) {
     };
 
     module.exports = PageView;
-
-
-    var nl2br  = function(str, is_xhtml) {
-        // http://kevin.vanzonneveld.net
-        // - nl2br() => php.js
-        var breakTag = (is_xhtml || typeof is_xhtml === 'undefined') ? '<br ' + '/>' : '<br>';
-        return (str + '').replace(/([^>\r\n]?)(\r\n|\n\r|\r|\n)/g, '$1' + breakTag + '$2');
-    };
-    function htmlEntities(str) {
-        if(typeof str != typeof("")){
-            return undefined;
-        }
-        return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-    }
 
 });

@@ -6,9 +6,9 @@
  * @license MPL 2.0
  * @copyright Famous Industries, Inc. 2014
  */
-
 define(function(require, exports, module) {
     var TwoFingerSync = require('./TwoFingerSync');
+    var OptionsManager = require('../core/OptionsManager');
 
     /**
      * Handles piped in two-finger touch events to increase or decrease scale via pinching / expanding.
@@ -25,6 +25,7 @@ define(function(require, exports, module) {
         TwoFingerSync.call(this);
 
         this.options = Object.create(ScaleSync.DEFAULT_OPTIONS);
+        this._optionsManager = new OptionsManager(this.options);
         if (options) this.setOptions(options);
 
         this._scaleFactor = 1;
@@ -51,7 +52,8 @@ define(function(require, exports, module) {
         this._eventOutput.emit('start', {
             count: event.touches.length,
             touches: [this.touchAId, this.touchBId],
-            distance: this._startDist
+            distance: this._startDist,
+            center: TwoFingerSync.calculateCenter(this.posA, this.posB)
         });
     };
 
@@ -60,6 +62,8 @@ define(function(require, exports, module) {
         var scale = this.options.scale;
 
         var currDist = TwoFingerSync.calculateDistance(this.posA, this.posB);
+        var center = TwoFingerSync.calculateCenter(this.posA, this.posB);
+
         var delta = (currDist - this._startDist) / this._startDist;
         var newScaleFactor = Math.max(1 + scale * delta, 0);
         var veloScale = (newScaleFactor - this._scaleFactor) / diffTime;
@@ -69,6 +73,7 @@ define(function(require, exports, module) {
             scale: newScaleFactor,
             velocity: veloScale,
             distance: currDist,
+            center : center,
             touches: [this.touchAId, this.touchBId]
         });
 
@@ -94,7 +99,7 @@ define(function(require, exports, module) {
      * @param {Number} [options.scale] scale velocity by this factor
      */
     ScaleSync.prototype.setOptions = function setOptions(options) {
-        if (options.scale !== undefined) this.options.scale = options.scale;
+        return this._optionsManager.setOptions(options);
     };
 
     module.exports = ScaleSync;

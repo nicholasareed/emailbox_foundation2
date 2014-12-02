@@ -48,6 +48,15 @@ define(function(require, exports, module) {
 
     var transitionMethods = {};
 
+    Transitionable.register = function register(methods) {
+        var success = true;
+        for (var method in methods) {
+            if (!Transitionable.registerMethod(method, methods[method]))
+                success = false;
+        }
+        return success;
+    };
+
     Transitionable.registerMethod = function registerMethod(name, engineClass) {
         if (!(name in transitionMethods)) {
             transitionMethods[name] = engineClass;
@@ -143,6 +152,7 @@ define(function(require, exports, module) {
     Transitionable.prototype.reset = function reset(startState, startVelocity) {
         this._currentMethod = null;
         this._engineInstance = null;
+        this._callback = undefined;
         this.state = startState;
         this.velocity = startVelocity;
         this.currentAction = null;
@@ -160,11 +170,12 @@ define(function(require, exports, module) {
      *    completion (t=1)
      */
     Transitionable.prototype.delay = function delay(duration, callback) {
-        this.set(this._engineInstance.get(), {duration: duration,
+        this.set(this.get(), {duration: duration,
             curve: function() {
                 return 0;
             }},
-            callback);
+            callback
+        );
     };
 
     /**
@@ -204,7 +215,7 @@ define(function(require, exports, module) {
      * @method halt
      */
     Transitionable.prototype.halt = function halt() {
-        this.set(this.get());
+        return this.set(this.get());
     };
 
     module.exports = Transitionable;

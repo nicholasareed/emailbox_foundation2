@@ -19,11 +19,11 @@ define(function(require, exports, module) {
      * @class Timer
      * @constructor
      */
-    var FamousEngine = require('famous/core/Engine');
+    var FamousEngine = require('../core/Engine');
 
     var _event  = 'prerender';
 
-    var getTime = (window.performance) ?
+    var getTime = (window.performance && window.performance.now) ?
         function() {
             return window.performance.now();
         }
@@ -184,9 +184,8 @@ define(function(require, exports, module) {
                 }
             };
 
-            if (!timeout) {
-                timeout = setTimeout(fn, wait);
-            }
+            clear(timeout);
+            timeout = setTimeout(fn, wait);
 
             return result;
         };

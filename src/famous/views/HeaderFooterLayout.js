@@ -8,10 +8,10 @@
  */
 
 define(function(require, exports, module) {
-    var Entity = require('famous/core/Entity');
-    var RenderNode = require('famous/core/RenderNode');
-    var Transform = require('famous/core/Transform');
-    var OptionsManager = require('famous/core/OptionsManager');
+    var Entity = require('../core/Entity');
+    var RenderNode = require('../core/RenderNode');
+    var Transform = require('../core/Transform');
+    var OptionsManager = require('../core/OptionsManager');
 
     /**
      * A layout which will arrange three renderables into a header and footer area of defined size,
@@ -32,6 +32,8 @@ define(function(require, exports, module) {
         this._optionsManager = new OptionsManager(this.options);
         if (options) this.setOptions(options);
 
+        this._headerSize = options.headerSize; // nick
+        
         this._entityId = Entity.register(this);
 
         this.header = new RenderNode();
@@ -88,6 +90,19 @@ define(function(require, exports, module) {
      */
     HeaderFooterLayout.prototype.setOptions = function setOptions(options) {
         return this._optionsManager.setOptions(options);
+    };
+
+
+    HeaderFooterLayout.prototype.keyboardShowHide = function keyboardShowHide(showing){
+        if(showing){
+            this.setOptions({
+                headerSize: 0
+            });
+        } else {
+            this.setOptions({
+                headerSize: this._headerSize
+            });
+        }
     };
 
     function _resolveNodeSize(node, defaultSize) {

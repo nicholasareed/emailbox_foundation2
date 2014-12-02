@@ -8,11 +8,11 @@
  */
 
 define(function(require, exports, module) {
-    var Entity = require('famous/core/Entity');
-    var Transform = require('famous/core/Transform');
-    var OptionsManager = require('famous/core/OptionsManager');
-    var EventHandler = require('famous/core/EventHandler');
-    var Transitionable = require('famous/transitions/Transitionable');
+    var Entity = require('../core/Entity');
+    var Transform = require('../core/Transform');
+    var OptionsManager = require('../core/OptionsManager');
+    var EventHandler = require('../core/EventHandler');
+    var Transitionable = require('../transitions/Transitionable');
 
     /**
      * A layout which divides a context into sections based on a proportion
@@ -34,11 +34,12 @@ define(function(require, exports, module) {
 
         this._ratios = new Transitionable(this.options.ratios);
         this._nodes = [];
+        this._size = [0, 0];
 
         this._cachedDirection = null;
-        this._cachedTotalLength = false;
         this._cachedLengths = [];
         this._cachedTransforms = null;
+        this._ratiosDirty = false;
 
         this._eventOutput = new EventHandler();
         EventHandler.setOutputHandler(this, this._eventOutput);
@@ -94,6 +95,17 @@ define(function(require, exports, module) {
         }
     }
 
+    function _trueSizedDirty(ratios, direction) {
+        for (var i = 0; i < ratios.length; i++) {
+            if (typeof ratios[i] !== 'number') {
+                if (this._nodes[i].getSize()[direction] !== this._cachedLengths[i])
+                    return true;
+            }
+        }
+
+        return false;
+    }
+
     /**
      * Generate a render spec from the contents of this component.
      *
@@ -141,9 +153,26 @@ define(function(require, exports, module) {
     FlexibleLayout.prototype.setRatios = function setRatios(ratios, transition, callback) {
         if (transition === undefined) transition = this.options.transition;
         var currRatios = this._ratios;
+        this.options.ratios = ratios;
         if (currRatios.get().length === 0) transition = undefined;
         if (currRatios.isActive()) currRatios.halt();
         currRatios.set(ratios, transition, callback);
+        this._ratiosDirty = true;
+    };
+
+    FlexibleLayout.prototype.updateRatios = function updateRatios(ratios, transition, callback) {
+        this.setRatios(this.options.ratios);
+    };
+
+    /**
+     * Gets the size of the context the FlexibleLayout exists within.
+     *
+     * @method getSize
+     *
+     * @return {Array} Size of the FlexibleLayout in pixels [width, height]
+     */
+    FlexibleLayout.prototype.getSize = function getSize() {
+        return this._size;
     };
 
     /**
@@ -159,17 +188,23 @@ define(function(require, exports, module) {
         var parentSize = context.size;
         var parentTransform = context.transform;
         var parentOrigin = context.origin;
+        var parentOpacity = context.opacity;
 
         var ratios = this._ratios.get();
         var direction = this.options.direction;
         var length = parentSize[direction];
         var size;
 
-        if (length !== this._cachedTotalLength || this._ratios.isActive() || direction !== this._cachedDirection) {
+        if (length !== this._size[direction] || this._ratiosDirty || this._ratios.isActive() || direction !== this._cachedDirection || _trueSizedDirty.call(this, ratios, direction)) {
             _reflow.call(this, ratios, length, direction);
 
-            if (length !== this._cachedTotalLength) this._cachedTotalLength = length;
+            if (length !== this._size[direction]) {
+                this._size[0] = parentSize[0];
+                this._size[1] = parentSize[1];
+            }
+
             if (direction !== this._cachedDirection) this._cachedDirection = direction;
+            if (this._ratiosDirty) this._ratiosDirty = false;
         }
 
         var result = [];
@@ -190,6 +225,7 @@ define(function(require, exports, module) {
         return {
             transform: parentTransform,
             size: parentSize,
+            opacity: parentOpacity,
             target: result
         };
     };

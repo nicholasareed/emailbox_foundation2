@@ -424,7 +424,7 @@ define(function (require) {
                 queryOptions.data = {
                                     auth: {
                                             app: App.Credentials.app_key,
-                                            access_token: App.Credentials.access_token
+                                            access_token: App.Data.access_token
                                         },
                                     data: data
                                     };

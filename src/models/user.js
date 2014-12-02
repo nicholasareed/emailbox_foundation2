@@ -4,17 +4,123 @@ define(function (require) {
 
     var $                   = require('jquery'),
         Backbone            = require('backbone-adapter'),
+        Utils = require('utils'),
 
         Credentials         = JSON.parse(require('text!credentials.json')),
 
-        User = Backbone.Model.extend({
+        User = Backbone.DeepModel.extend({
 
             idAttribute: '_id',
             
             urlRoot: Credentials.server_root + "user",
 
-            initialize: function () {
-                this.url = this.urlRoot;
+            initialize: function (defaults) {
+              defaults = defaults || {};
+              this.url = this.urlRoot;
+              if(defaults.profile_id){
+                this.url = this.urlRoot + '/profile/' + defaults.profile_id;
+              }
+                
+            },
+
+            setupUser: function(){
+              
+            },
+
+            submitEmailCode: function(code){
+              var def = $.Deferred();
+
+              $.ajax({
+                url: Credentials.server_root + 'user/verify/email/',
+                data: {
+                  code: code, 
+                  platform: App.Config.devicePlatform
+                },
+                method: 'post',
+                success: function(result){
+                  // verified
+                  def.resolve();
+                },
+                error: function(){
+                  def.reject();
+                }
+              }); 
+
+              return def.promise();
+            },
+
+            verifiedEmail: function(){
+              var def = $.Deferred();
+
+              $.ajax({
+                url: Credentials.server_root + 'user/verify/status/',
+                method: 'get',
+                cache: false,
+                success: function(result){
+                  // verified
+                  // console.error(JSON.stringify(result));
+                  // Utils.Notification.Toast(result);
+                  if(result.verified == true){
+                    def.resolve();
+                    return;
+                  }
+                  // alert(JSON.stringify(result));
+                  def.reject(result);
+                },
+                error: function(err){
+                  def.reject(err);
+                }
+              }); 
+
+              return def.promise();
+            },
+
+            resendEmail: function(){
+              var def = $.Deferred();
+              
+              $.ajax({
+                url: Credentials.server_root + 'user/email/',
+                method: 'post',
+                data: {
+                  email: localStorage.getItem(Credentials.local_user_email)
+                },
+                success: function(){
+                  // resent
+                  def.resolve();
+                },
+                error: function(){
+                  def.reject();
+                }
+              });  
+
+              return def.promise();
+            },
+
+            signup: function(body){
+                // Log in a user with credentials
+                // - store login information in the global scope
+
+                // Deferred
+                var def = $.Deferred();
+
+                // Run ajax command from here, instead of from View
+                $.ajax({
+                  url: Credentials.server_root + 'signup',
+                  data: body,
+                  method: 'POST',
+                  success: function(response){
+                    // Signed up OK
+
+                    def.resolve(response);
+
+                  },
+                  error: function(errResponse){
+                    def.reject(errResponse);
+                  }
+                });
+
+                return def.promise();
+
             },
 
             login: function(body){
@@ -24,21 +130,75 @@ define(function (require) {
                 // Deferred
                 var def = $.Deferred();
 
+                var extra = '';
+                if(body.facebook === true){
+                  extra = '/facebook';
+                }
+
                 // Run ajax command from here, instead of from View
                 $.ajax({
-                  url: Credentials.server_root + 'login/2',
+                  url: Credentials.server_root + 'login' + extra,
                   data: body,
                   method: 'POST',
                   success: function(response){
                     // Great!
                     //  store the access token
 
+                    var token = response.token;
+
+                    // Store access_token in localStorage
+                    localStorage.setItem(App.Credentials.local_token_key, token);
+                    App.Data.UserToken = token;
+
+                    console.log(response);
+
+                    App.Data.UserToken = token;
+
                     // Update ajaxSetup with x-token header
                     $.ajaxSetup({
                         headers: {
-                            'x-token' : response.token
+                            "x-token" : token
+                            // 'Authorization' : 'Bearer ' + response.access_token
                         }
                     });
+
+                    App.Data.User = new User({
+                      _id: response._id
+                    });
+                    App.Data.User.fetch();
+                    App.Data.User.populated().then(function(){
+                      localStorage.setItem(App.Credentials.local_user_key, JSON.stringify(App.Data.User.toJSON()));
+                    });
+
+                    try {
+                      // window._trackJs.userId = body.email;
+                      trackJs.configure({
+
+                        // // Custom session identifier.
+                        // sessionId: "",
+
+                        // Custom user identifier.
+                        userId: body.email.toLowerCase(),
+
+                        // // Custom application identifier.
+                        // version: ""
+
+                      });
+                    } catch(err){
+                      console.error('No Track.js');
+                    }
+
+                    // Save user email
+                    localStorage.setItem(Credentials.local_user_email, body.email)
+
+                    // Preload Models
+                    require(['models/preload'], function(PreloadModels){
+                        PreloadModels(App);
+                    });
+
+                    // Register for Push Notifications
+                    App.DeviceReady.initPush();
+                    
 
                     // Return to original
                     def.resolve(response);
@@ -53,9 +213,11 @@ define(function (require) {
 
             }
 
-        }),
+        });
 
-        UserCollection = Backbone.Paginator.requestPager.extend({
+        User = Backbone.UniqueModel(User);
+
+        var UserCollection = Backbone.Paginator.requestPager.extend({
 
             model: User,
 
@@ -124,6 +286,14 @@ define(function (require) {
             initialize: function(models, options){
                 options = options || {};
                 this.options = options;
+
+                if(options.type == 'sentence_to_select'){
+                  this.url = Credentials.server_root + 'sentence/users/to_select';
+                }
+
+                if(options.type == 'sentence_matched'){
+                  this.url = Credentials.server_root + 'sentence/users/matched';
+                }
 
             }
 

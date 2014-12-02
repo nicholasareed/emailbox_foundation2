@@ -241,8 +241,8 @@
 
                     // Get token hash for this query
                     var token = Utils.base64.encode(JSON.stringify(data));
-                    if(App.Data.Cache.Patching[token] != undefined){
-                        data.hash = App.Data.Cache.Patching[token].hash;
+                    if(App.Cache.Patching[token] != undefined){
+                        data.hash = App.Cache.Patching[token].hash;
                     }
 
                     Api.search({
@@ -274,7 +274,7 @@
                                 // - included hash+text
                                 try {
                                     // console.log(collection.model.internalModelName + '_' + model.id);
-                                    if(App.Data.Cache.Patching[token].text.length > 0){
+                                    if(App.Cache.Patching[token].text.length > 0){
                                         // ok
 
                                     }
@@ -293,7 +293,7 @@
                                 var patches = dmp.patch_fromText(response.patch);
 
                                 // get our result text!
-                                var result_text = dmp.patch_apply(patches, App.Data.Cache.Patching[token].text);
+                                var result_text = dmp.patch_apply(patches, App.Cache.Patching[token].text);
 
                                 // Convert text to an object
                                 try {
@@ -328,7 +328,7 @@
                             }
 
                             // Update cache for patching
-                            App.Data.Cache.Patching[token] = {
+                            App.Cache.Patching[token] = {
                                 hash: response.hash,
                                 text: JSON.stringify(response.data)
                             };
@@ -539,8 +539,8 @@
 
                     // Get token hash for this query
                     var token = Utils.base64.encode(JSON.stringify(data));
-                    if(App.Data.Cache.Patching[token] != undefined){
-                        data.hash = App.Data.Cache.Patching[token].hash;
+                    if(App.Cache.Patching[token] != undefined){
+                        data.hash = App.Cache.Patching[token].hash;
                     }
 
                     var runFunc = function(data){
@@ -573,7 +573,7 @@
                                     // - included hash+text
                                     try {
                                         // console.log(collection.model.internalModelName + '_' + model.id);
-                                        if(App.Data.Cache.Patching[token].text.length > 0){
+                                        if(App.Cache.Patching[token].text.length > 0){
                                             // ok
 
                                         }
@@ -592,7 +592,7 @@
                                     var patches = dmp.patch_fromText(response.patch);
 
                                     // get our result text!
-                                    var result_text = dmp.patch_apply(patches, App.Data.Cache.Patching[token].text);
+                                    var result_text = dmp.patch_apply(patches, App.Cache.Patching[token].text);
 
                                     // Convert text to an object
                                     try {
@@ -620,7 +620,7 @@
                                 });
 
                                 // Update cache for patching
-                                App.Data.Cache.Patching[token] = {
+                                App.Cache.Patching[token] = {
                                     hash: response.hash,
                                     text: JSON.stringify(response.data)
                                 };

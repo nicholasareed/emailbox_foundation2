@@ -246,6 +246,42 @@
   // Create a new model with the specified attributes. A client id (`cid`)
   // is automatically generated and assigned for you.
   var Model = Backbone.Model = function(attributes, options) {
+    
+    // // This gets run too late to be effective
+    // if(this.populatedPromise){
+    //   debugger;
+    // } else {
+    //   debugger;
+    //   this.hasFetched = false;
+    //   this.populatedPromise = $.Deferred();
+    //   this.populated = function(){
+    //     // return population after we make sure it has been populated
+    //     var that = this;
+    //     var newDef = $.Deferred();
+    //     this.populatedPromise.promise().then(function(){
+    //       if(Object.keys(that.toJSON()).length <= 1){
+    //         console.log('not yet ready for primetime');
+    //         console.log(JSON.stringify(that.toJSON()));
+    //         console.trace();
+    //         debugger;
+    //         return;
+    //       }
+    //       if(that.toJSON()._id == "53a338ae68eea60400c5e09a"){
+    //         console.log(that.attributes);
+    //         console.log(that.toJSON());
+    //         console.log(Object.keys(that.toJSON()));
+    //         console.trace();
+    //         // debugger;
+    //       }
+    //       console.log(that.toJSON());
+    //       // debugger;
+    //       newDef.resolve();
+    //     });
+    //     // return this.populatedPromise.promise();
+    //     return newDef.promise();
+    //   };
+    // }
+
     var attrs = attributes || {};
     options || (options = {});
     this.cid = _.uniqueId('c');
@@ -256,13 +292,32 @@
     this.set(attrs, options);
     this.changed = {};
 
-    this.hasFetched = false;
-    this.populatedPromise = $.Deferred();
-    this.populated = function(){
-      return this.populatedPromise.promise();
-    }
-
     this.initialize.apply(this, arguments);
+
+    // this.hasFetched = false;
+    // this.populatedPromise = $.Deferred();
+    // this.populated = function(){
+
+    //   var that = this;
+    //   var newDef = $.Deferred();
+    //   that.populatedPromise.promise().then(function(){
+    //     // if(that.toJSON()._id == '53a338ae68eea60400c5e09a'){
+    //     //   debugger;
+    //     // }
+    //     // console.log(that.toJSON());
+    //     // console.log(that.toJSON()._id);
+    //     // debugger;
+    //     newDef.resolve();
+    //   });
+    //   // return this.populatedPromise.promise();
+    //   return newDef.promise();
+
+    //   // console.log(this);
+    //   // debugger;
+    //   // return this.populatedPromise.promise();
+    // }
+
+    // this.populatedPromise = 
 
     // // If has an _id, then start syncing models with this URL across the app
     // // - sequence their events, so that they emit on all the other Models of that type
@@ -307,12 +362,31 @@
     // CouchDB users may want to set this to `"_id"`.
     idAttribute: 'id',
 
+    // hasFetched: false,
+    // populatedPromise: $.Deferred(),
+    // populated: function(){
+    //   // return population after we make sure it has been populated
+    //   var that = this;
+    //   var newDef = $.Deferred();
+    //   this.populatedPromise.promise().then(function(){
+    //     if(Object.keys(that.toJSON()).length <= 1){
+    //       console.log('not yet ready for primetime, why the fuck resolved?');
+    //       console.log(JSON.stringify(that.toJSON()));
+    //       console.trace();
+    //       debugger;
+    //       return;
+    //     }
+    //     console.log(that.toJSON());
+    //     // debugger;
+    //     newDef.resolve();
+    //   });
+    //   // return this.populatedPromise.promise();
+    //   return newDef.promise();
+    // },
 
-    hasFetched: false,
-    populatedPromise: $.Deferred(),
-    populated: function(){
-      return this.populatedPromise.promise();
-    },
+    // hasFetched: false,
+    // populatedPromise: null,
+    // populated: null,
 
     // Initialize is an empty function by default. Override it with your own
     // initialization logic.
@@ -326,6 +400,7 @@
     // Proxy `Backbone.sync` by default -- but override this if you need
     // custom syncing semantics for *this* particular model.
     sync: function() {
+      console.info('sync model');
       return Backbone.sync.apply(this, arguments);
     },
 
@@ -414,6 +489,7 @@
       }
       this._pending = false;
       this._changing = false;
+
       return this;
     },
 
@@ -474,18 +550,66 @@
       options = options ? _.clone(options) : {};
       if (options.parse === void 0) options.parse = true;
       var model = this;
+
+      if(this.hasFetched === undefined){
+        this.hasFetched = false;
+        this.populatedPromise = $.Deferred();
+        this.populated = function(){
+          var that = this;
+          var newDef = $.Deferred();
+          that.populatedPromise.promise().then(function(){
+            newDef.resolve();
+          });
+          // return this.populatedPromise.promise();
+          return newDef.promise();
+        }
+      }
+
+      var model2 = this;
       var success = options.success;
       options.success = function(resp) {
         if (!model.set(model.parse(resp, options), options)) return false;
 
-        model.hasFetched = true; // Nick
-        model.populatedPromise.resolve(); // Nick
+        // if(Object.keys(model.toJSON()).length <= 1){
+          // Only the _id is set, which isn't reason enough to populate
+          
+          // console.log('RESOLVED');
+          // console.log(model.toJSON());
+          // debugger;
+          // console.log('resolved6', model.toJSON());
+          // debugger;
+          // console.log('resolve0', model.toJSON());
+          if(Object.keys(model.toJSON()).length <= 1){
+            // Only one field (_id) even exists
+            console.log('Not populating yet');
+          } else {
+            // console.log(model.toJSON());
+            // console.log('did populate', Object.keys(model.toJSON()).length);
+            // console.log(JSON.stringify(model.toJSON()));
+            model.hasFetched = true; // Nick
+            // console.log(model);
+            try {
+              model.populatedPromise.resolve(); // Nick
+              console.info('populated ok');
+            }catch(err){
+              console.info('should be debugger-ing');
+              // debugger;
+              console.error(err);
+            }
+          }
+          // debugger;
+        // }
 
         if (success) success(model, resp, options);
         model.trigger('sync', model, resp, options);
       };
       wrapError(this, options);
-      return this.sync('read', this, options);
+      // return this.sync('read', this, options);
+      window.setTimeout((function(){
+        this.sync('read', this, options);
+        // debugger;
+      }).bind(this),500);
+      return;
     },
 
     // Set a hash of model attributes, and sync the model to the server.
@@ -653,9 +777,27 @@
 
     this.hasFetched = false;
     this.populatedPromise = $.Deferred();
+    var that = this;
+    // this.populated = function(){
+
+    //   return this.populatedPromise.promise();
+    // }
     this.populated = function(){
-      return this.populatedPromise.promise();
-    }
+      // return population after we make sure it has been populated
+      var that = this;
+      var newDef = $.Deferred();
+      that.populatedPromise.promise().then(function(){
+        // if(that.toJSON()._id == '53a338ae68eea60400c5e09a'){
+        //   debugger;
+        // }
+        // console.log(that.toJSON());
+        // console.log(that.toJSON()._id);
+        // debugger;
+        newDef.resolve();
+      });
+      // return this.populatedPromise.promise();
+      return newDef.promise();
+    };
 
     this._reset();
     this.initialize.apply(this, arguments);
@@ -761,7 +903,12 @@
           // Nick's fetch stuff for a model in a collection
           // console.log(existing);
           existing.hasFetched = true; // Nick
+          // console.log('resolved1', existing.toJSON());
+          // if(!existing.populatedPromise){
+          //   existing.populatedPromise = new $.Deferred();
+          // }
           existing.populatedPromise.resolve(); // Nick
+          
           
 
         // If this is a new, valid model, push it to the `toAdd` list.
@@ -775,7 +922,14 @@
           // Nick's fetch stuff for a model in a collection
           // console.log(model);
           model.hasFetched = true; // Nick
+          // console.log('resolved2', model.toJSON());
+          // if(!model.populatedPromise){
+          //   model.populatedPromise = new $.Deferred();
+          // }
+          // console.log(model);
           model.populatedPromise.resolve(); // Nick
+          // debugger;
+          // console.log('resolved2', model.toJSON());
 
         }
 
@@ -935,13 +1089,20 @@
         collection[method](resp, options);
         
         collection.hasFetched = true; // Nick
+        // console.log('resolve_collection3', collection.toJSON());
         collection.populatedPromise.resolve(); // Nick
+        // console.log('resolved3', collection.toJSON());
         
         if (success) success(collection, resp, options);
         collection.trigger('sync', collection, resp, options);
       };
       wrapError(this, options);
-      return this.sync('read', this, options);
+      // return this.sync('read', this, options);
+
+      window.setTimeout((function(){
+        this.sync('read', this, options);
+      }).bind(this),500);
+      return;
     },
 
     // Create a new instance of a model in this collection. Add the model to the
@@ -985,7 +1146,7 @@
     _prepareModel: function(attrs, options) {
 
       if (attrs instanceof Model){
-        debugger;
+        // debugger;
         return attrs;
       }
       options = options ? _.clone(options) : {};
@@ -993,11 +1154,22 @@
 
       var model = new this.model(attrs, options);
 
-      model.hasFetched = false;
-      model.populatedPromise = $.Deferred();
-      model.populated = function(){
-        return model.populatedPromise.promise();
-      };
+      // model.hasFetched = false;
+      if(!model.populatedPromise){
+        model.populatedPromise = $.Deferred();
+        model.populated = function(){
+          // return population after we make sure it has been populated
+          var newDef = $.Deferred();
+          model.populatedPromise.promise().then(function(){
+            newDef.resolve();
+          });
+          return newDef.promise();
+
+        };
+        // model.populated = function(){
+        //   return model.populatedPromise.promise();
+        // };
+      }
 
       if (!model.validationError) return model;
       this.trigger('invalid', this, model.validationError, options);

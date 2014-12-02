@@ -8,15 +8,15 @@
  */
 
 define(function(require, exports, module) {
-    var Entity = require('famous/core/Entity');
-    var RenderNode = require('famous/core/RenderNode');
-    var Transform = require('famous/core/Transform');
-    var ViewSequence = require('famous/core/ViewSequence');
-    var EventHandler = require('famous/core/EventHandler');
-    var Modifier = require('famous/core/Modifier');
-    var OptionsManager = require('famous/core/OptionsManager');
-    var Transitionable = require('famous/transitions/Transitionable');
-    var TransitionableTransform = require('famous/transitions/TransitionableTransform');
+    var Entity = require('../core/Entity');
+    var RenderNode = require('../core/RenderNode');
+    var Transform = require('../core/Transform');
+    var ViewSequence = require('../core/ViewSequence');
+    var EventHandler = require('../core/EventHandler');
+    var Modifier = require('../core/Modifier');
+    var OptionsManager = require('../core/OptionsManager');
+    var Transitionable = require('../transitions/Transitionable');
+    var TransitionableTransform = require('../transitions/TransitionableTransform');
 
     /**
      * A layout which divides a context into several evenly-sized grid cells.
@@ -28,8 +28,8 @@ define(function(require, exports, module) {
      * @param {Options} [options] An object of configurable options.
      * @param {Array.Number} [options.dimensions=[1, 1]] A two value array which specifies the amount of columns
      * and rows in your Gridlayout instance.
-     * @param {Array.Number} [options.cellSize=[250, 250]]  A two-value array which specifies the width and height
-     * of each cell in your Gridlayout instance.
+     * @param {Array.Number} [options.gutterSize=[0, 0]] A two-value array which specifies size of the
+     * horizontal and vertical gutters between items in the grid layout.
      * @param {Transition} [options.transition=false] The transiton that controls the Gridlayout instance's reflow.
      */
     function GridLayout(options) {
@@ -162,6 +162,16 @@ define(function(require, exports, module) {
     };
 
     /**
+     * Returns the size of the grid layout.
+     *
+     * @method getSize
+     * @return {Array} Total size of the grid layout.
+     */
+    GridLayout.prototype.getSize = function getSize() {
+      return this._contextSizeCache;
+    };
+
+    /**
      * Apply changes from this component to the corresponding document element.
      * This includes changes to classes, styles, size, content, opacity, origin,
      * and matrix transforms.
@@ -194,10 +204,12 @@ define(function(require, exports, module) {
                 this._states.splice(currIndex, 1);
             }
             if (item) {
-                result[currIndex] = modifier.modify({
-                    origin: origin,
-                    target: item.render()
-                });
+                result.push(
+                    modifier.modify({
+                        origin: origin,
+                        target: item.render()
+                    })
+                );
             }
             sequence = sequence.getNext();
             currIndex++;

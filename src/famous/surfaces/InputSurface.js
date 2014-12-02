@@ -8,7 +8,7 @@
  */
 
 define(function(require, exports, module) {
-    var Surface = require('famous/core/Surface');
+    var Surface = require('../core/Surface');
 
     /**
      * A Famo.us surface in the form of an HTML input element.
@@ -29,7 +29,11 @@ define(function(require, exports, module) {
         this._name        = options.name || '';
 
         Surface.apply(this, arguments);
+
         this.on('click', this.focus.bind(this));
+        window.addEventListener('click', function(event) {
+            if (event.target !== this._currentTarget) this.blur();
+        }.bind(this));
     }
     InputSurface.prototype = Object.create(Surface.prototype);
     InputSurface.prototype.constructor = InputSurface;
@@ -57,7 +61,7 @@ define(function(require, exports, module) {
      * @return {InputSurface} this, allowing method chaining.
      */
     InputSurface.prototype.focus = function focus() {
-        if (this._currTarget) this._currTarget.focus();
+        if (this._currentTarget) this._currentTarget.focus();
         return this;
     };
 
@@ -68,7 +72,7 @@ define(function(require, exports, module) {
      * @return {InputSurface} this, allowing method chaining.
      */
     InputSurface.prototype.blur = function blur() {
-        if (this._currTarget) this._currTarget.blur();
+        if (this._currentTarget) this._currentTarget.blur();
         return this;
     };
 
@@ -107,8 +111,11 @@ define(function(require, exports, module) {
      * @return {string} value of element
      */
     InputSurface.prototype.getValue = function getValue() {
-        if (this._currTarget) {
-            return this._currTarget.value;
+        if (this._currentTarget) {
+            return this._currentTarget.value;
+        }
+        else if(this._currTarget){
+            return this._currTarget.value;   
         }
         else {
             return this._value;

@@ -8,14 +8,14 @@
  */
 
 define(function(require, exports, module) {
-    var Transform = require('famous/core/Transform');
-    var Transitionable = require('famous/transitions/Transitionable');
-    var EventHandler = require('famous/core/EventHandler');
-    var Utilities = require('famous/math/Utilities');
+    var Transform = require('../core/Transform');
+    var Transitionable = require('../transitions/Transitionable');
+    var EventHandler = require('../core/EventHandler');
+    var Utilities = require('../math/Utilities');
 
-    var GenericSync = require('famous/inputs/GenericSync');
-    var MouseSync = require('famous/inputs/MouseSync');
-    var TouchSync = require('famous/inputs/TouchSync');
+    var GenericSync = require('../inputs/GenericSync');
+    var MouseSync = require('../inputs/MouseSync');
+    var TouchSync = require('../inputs/TouchSync');
     GenericSync.register({'mouse': MouseSync, 'touch': TouchSync});
 
     /**
@@ -124,11 +124,6 @@ define(function(require, exports, module) {
         this.eventOutput.emit('update', {position : pos});
     }
 
-    function _handleLeave() {
-        if (!this._active) return;
-        this.eventOutput.emit('leave', {position : this.getPosition()});
-    }
-
     function _handleEnd() {
         if (!this._active) return;
         this.eventOutput.emit('end', {position : this.getPosition()});
@@ -137,7 +132,6 @@ define(function(require, exports, module) {
     function _bindEvents() {
         this.sync.on('start', _handleStart.bind(this));
         this.sync.on('update', _handleMove.bind(this));
-        this.sync.on('leave', _handleLeave.bind(this));
         this.sync.on('end', _handleEnd.bind(this));
     }
 
@@ -157,7 +151,12 @@ define(function(require, exports, module) {
                 if (proj.indexOf(val) !== -1) currentOptions.projection |= _direction[val];
             });
         }
-        if (options.scale  !== undefined) currentOptions.scale  = options.scale;
+        if (options.scale  !== undefined) {
+            currentOptions.scale  = options.scale;
+            this.sync.setOptions({
+                scale: options.scale
+            });
+        }
         if (options.xRange !== undefined) currentOptions.xRange = options.xRange;
         if (options.yRange !== undefined) currentOptions.yRange = options.yRange;
         if (options.snapX  !== undefined) currentOptions.snapX  = options.snapX;
