@@ -244,7 +244,7 @@ define(function(require, exports, module) {
             var p = {
                 response_type: 'token', // token = "#", code = "?"
                 client_id : App.Credentials.app_key,
-                redirect_uri : 'https://getemailbox.com/testback'
+                redirect_uri : App.Credentials.base_login_url + '/testback'
             };
             var params = $.param(p);
             var call_url = App.Credentials.base_login_url + "/apps/authorize/?" + params;
