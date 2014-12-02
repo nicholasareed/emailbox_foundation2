@@ -249,10 +249,12 @@ define(function(require, exports, module) {
             var params = $.param(p);
             var call_url = App.Credentials.base_login_url + "/apps/authorize/?" + params;
 
-            var ref = window.open(call_url, '_blank', 'location=yes');
+            var ref = window.open(call_url, '_system', 'location=yes');
             ref.addEventListener('loadstart', function(event) { 
                 // event.url;
                 var tmp_url = event.url;
+
+                console.log(tmp_url);
 
                 var parser = document.createElement('a');
                 parser.href = tmp_url;
@@ -282,7 +284,7 @@ define(function(require, exports, module) {
                         // App.Utils.Storage.set(App.Credentials.prefix_access_token + 'user', oauthParams.user_identifier);
                         // App.Utils.Storage.set(App.Credentials.prefix_access_token + 'access_token', oauthParams.access_token);
 
-                        Utils.Storage.set(App.Credentials.prefix_access_token + 'user', oauthParams.user_identifier, 'critical')
+                        Utils.Storage.set(App.Credentials.prefix_access_token + 'user_identifier', oauthParams.user_identifier, 'critical')
                             .then(function(){
                                 // Saved user!
                                 // alert('saved user');
@@ -331,7 +333,7 @@ define(function(require, exports, module) {
 
             });
             // ref.addEventListener('loadstop', function(event) { alert('stop: ' + event.url); });
-            // ref.addEventListener('loaderror', function(event) { console.error('Uh Oh, encountered an error: ' + event.message); });
+            ref.addEventListener('loaderror', function(event) { console.error('Uh Oh, encountered an error: ' + event.message); });
             // ref.addEventListener('exit', function(event) { alert('exit1');alert(event.type); });
 
         } else {
