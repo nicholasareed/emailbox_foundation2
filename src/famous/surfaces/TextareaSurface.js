@@ -183,7 +183,10 @@ define(function(require, exports, module) {
      */
     TextareaSurface.prototype.deploy = function deploy(target) {
         if (this._placeholder !== '') target.placeholder = this._placeholder;
-        if (this._value !== '') target.value = this._value;
+
+        // Broken implementation of updatng the "target" causes Textarea to not update value, if value="" (EVEN ON NEWLY_CREATED ELEMENTS!!!!)
+        // if (this._value !== '') target.value = this._value;
+        target.value = this._value;
         if (this._name !== '') target.name = this._name;
         if (this._wrap !== '') target.wrap = this._wrap;
         if (this._cols !== '') target.cols = this._cols;

@@ -150,13 +150,13 @@ define(function(require, exports, module) {
         rails: true,
 
         // browser
-        friction: 0.005,
-        drag: 0.001,
+        friction: 0.0000005,
+        drag: 0.00000001,
         edgeGrip: 0.2,
         edgePeriod: 300,
         edgeDamp: 1,
 
-        margin: 100000,    // 5000 is mostly safe    
+        margin: 1000,    // 5000 is mostly safe    
 
         // // mobile
 
@@ -167,7 +167,7 @@ define(function(require, exports, module) {
         // edgePeriod: 500,
         // edgeDamp: 0.5,
 
-        speedLimit: 10,
+        speedLimit: 10000,
 
 
         paginated: false,

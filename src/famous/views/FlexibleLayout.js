@@ -212,11 +212,18 @@ define(function(require, exports, module) {
             size = [undefined, undefined];
             length = this._cachedLengths[i];
             size[direction] = length;
-            result.push({
-                transform : this._cachedTransforms[i],
-                size: size,
-                target : this._nodes[i].render()
-            });
+            try {
+                result.push({
+                    transform : this._cachedTransforms[i],
+                    size: size,
+                    target : this._nodes[i].render()
+                });
+            }catch(err){
+                console.error('Missing enough items in your sequenceFrom to match the .ratios!');
+                console.log('length', this._nodes.length);
+                console.log('i', i);
+                debugger;
+            }
         }
 
         if (parentSize && (parentOrigin[0] !== 0 && parentOrigin[1] !== 0))

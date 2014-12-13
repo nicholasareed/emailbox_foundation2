@@ -218,7 +218,7 @@ define(function(require, exports, module) {
         return this;
     };
 
-    Surface.prototype.updateContent = function updateContent(content) {
+    Surface.prototype.updateContent = function updateContent() {
         this._contentDirty = true;
         return this;
     }
