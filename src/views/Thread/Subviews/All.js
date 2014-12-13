@@ -229,7 +229,7 @@ define(function(require, exports, module) {
 
         threadView.Layout = new Surface({
             content: buildThread(Thread),
-            size: [undefined, 80],
+            size: [undefined, true],
             initialSize: [undefined, 100],
             classes: ["thread-list-item"],
             properties: {
@@ -314,9 +314,8 @@ define(function(require, exports, module) {
 
         // Resort the contentLayout.Views
         this.contentLayout.Views = _.sortBy(this.contentLayout.Views, function(v){
-            // console.log(v.Model.get('created'));
-            
-            return v.Model.get('created');
+            // console.log(v.Model.get('attributes.last_message_datetime'));
+            return v.Model.get('attributes.last_message_datetime');
         });
         this.contentLayout.Views.reverse();
 

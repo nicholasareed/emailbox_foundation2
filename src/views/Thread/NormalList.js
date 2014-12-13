@@ -88,9 +88,9 @@ define(function(require, exports, module) {
         var that = this;
         
         // Icons
+        this.headerContent = new View();
 
         // Create a Contest
-        this.headerContent = new View();
         this.headerContent.Create = new Surface({
             content: '<i class="icon ion-ios7-plus-outline"></i>',
             size: [App.Defaults.Header.Icon.w, undefined],
@@ -104,7 +104,7 @@ define(function(require, exports, module) {
             App.history.modifyLast({
                 tag: 'StartAdd'
             });
-            App.history.navigate('contest/add', {history: false});
+            App.history.navigate('email/add', {history: false});
 
             return;
         });
@@ -216,7 +216,7 @@ define(function(require, exports, module) {
             // moreClasses: ["normal-header"],
             moreSurfaces: [
                 // this.headerContent.Invoices,
-                this.headerContent.History,
+                // this.headerContent.History,
                 // this.headerContent.Search, // Find NEW Jobs (maybe rename to Bids?)
                 this.headerContent.Create
                 // this.headerContent.FilterSwitcher,

@@ -280,8 +280,9 @@
 
 /* Thread List Items */
 
-.thread-list-item {
+.thread-list-item div.padding {
   padding: 12.5px 8px;
+  border-bottom: 1px solid #ececec;
 }
 
 
@@ -304,6 +305,31 @@
   opacity: 0.8;
 }
 
+
+
+/* Viewing a Thread (list of emails) */
+
+.email-list-item-from {
+  padding: 8px;
+  background: #ececec;
+}
+
+.email-list-item-body {
+  padding: 8px;
+}
+
+.ParsedDataContent {
+  word-wrap: break-word;
+}
+
+.ParsedDataContent:not([data-level="0"]) {
+  display: none;
+  margin-top: 18px;
+}
+
+.ParsedDataContent div.embedded_media {
+  padding: 5px 0;
+}
 
 
 

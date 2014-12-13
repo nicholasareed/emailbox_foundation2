@@ -166,6 +166,15 @@ define(function(require, exports, module) {
                 },
 
 
+                // Compose
+
+                'email/add/summary(/:hash)' : function(){
+                    defaultRoute('EmailAddSummary', 'Email/Add/Summary', arguments, {cache: true});
+                },
+                'email/add' : function(){
+                    defaultRoute('EmailAdd', 'Email/Add/Wizard', arguments, {cache: false});
+                },
+
                 'threads/stored/:name' : function(){
                     defaultRoute('ThreadList', 'Thread/NormalList', arguments);
                 },

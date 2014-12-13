@@ -20,6 +20,11 @@ define(function(require, exports, module) {
     var Utility = require('famous/utilities/Utility');
     var Timer = require('famous/utilities/Timer');
 
+    // Views
+    var FormHelper = require('views/common/FormHelper');
+    var BoxLayout = require('famous-boxlayout');
+    var LayoutBuilder = require('views/common/LayoutBuilder');
+
     var HeaderFooterLayout = require('famous/views/HeaderFooterLayout');
     var NavigationBar = require('famous/widgets/NavigationBar');
     var GridLayout = require("famous/views/GridLayout");
@@ -243,154 +248,188 @@ define(function(require, exports, module) {
         var index = 1;
 
         // SequentialLayout to hold Header(To,From,Actions),Body, Signature
-        var EmailView = new View();
+        var EmailView = new LayoutBuilder({
+            sequential: {
+                direction: 1,
+                size: [undefined, true],
+                sequenceFrom: [{
+                    surface: {
+                        key: 'From',
+                        surface: new Surface({
+                            content: Handlebars.helpers.personName(email.original.headers.From_Parsed[0]),
+                            size: [undefined, true],
+                            classes: ['email-list-item-from']
+                        }),
+                        pipe: that.contentLayout
+                    }
+                }
+                ,that.build_body.call(that, email)
+                ]
+            }
+        });
 
         EmailView.Model = Model;
         
-        EmailView.TransitionModifier = new StateModifier({
-            // transform: Transform.translate(window.innerWidth,0,0)
-            transform: Transform.translate(0,0,0)
-        });
-        var EmailsSeqLayout = new SequentialLayout();
-        EmailView.EmailsSeqLayout = EmailsSeqLayout;
+        // EmailView.TransitionModifier = new StateModifier({
+        //     // transform: Transform.translate(window.innerWidth,0,0)
+        //     transform: Transform.translate(0,0,0)
+        // });
+        // var EmailsSeqLayout = new SequentialLayout();
+        // EmailView.EmailsSeqLayout = EmailsSeqLayout;
 
-        var EmailSeq = [];
+        // var EmailSeq = [];
 
-        var views = {};
+        // var views = {};
 
-        // Create the From
-        views.From = new View();
-        views.From.Surface = new Surface({
-            content: Handlebars.helpers.personName(email.original.headers.From_Parsed[0]),
-            size: [undefined, 20],
-            classes: [],
-            properties: {
-                color: "black",
-                backgroundColor: "#f8f8f8",
-                lineHeight: "20px"
-            }
-        });
-        views.From.add(views.From.Surface);
-
-        views.From.Surface.pipe(that.contentLayout);
-
-        // Cc
-        // Bcc
-
-        // console.log(Handlebars);
-        // console.log(Handlebars.helpers.personName(email.original.headers.From_Parsed[0]));
-
-        // Pretty headers surface
-        views.PrettyHeaders = new View();
-        views.PrettyHeaders.Surface = new Surface({
-            content: JSON.stringify(email.original.headers),
-            size: [undefined, true]
-        });
-        views.PrettyHeaders.DisplayMod = new StateModifier();
-
-        views.PrettyHeaders.add(views.PrettyHeaders.DisplayMod).add(views.PrettyHeaders.Surface.RealSizeMod).add(views.PrettyHeaders.Surface);
-        views.PrettyHeaders.Surface.pipe(that.contentLayout);
-
-        views.Body = new View();
-        views.Body.Surface = new Surface({
-            content: that.display_bodies(email),
-            // content: nl2br(emails[index]),
-            // size: [(window.innerWidth) - ((window.innerWidth / 5) * index), true],
-            size: [window.innerWidth - 10, true],
-            classes: ["email-list-item"],
-            properties: {
-                lineHeight: '20px',
-                padding: '5px',
-                // borderRadius: "3px",
-                backgroundColor: "white"
-                // backgroundColor: "hsl(" + ((index+1) * 360 / 40) + ", 100%, 50%)",
-            }
-        });
-        views.Body.Surface.pipe(that.contentLayout);
-        // views.Body.Surface.on('sizeUpdated', function(newSize){
-
-        //     console.info('deployed newSize in Thread', newSize);
-        //     // console.log(this);
-        //     // console.log(this._size);
-        //     // console.log(this.getSize(true));
-
-        //     var paddingSize = 10;
-        //     this.View.PaddingModifier.setSize([undefined, newSize[1] + paddingSize]);
-
-        //     // console.log(newSize[1] + paddingSize);
-        //     // this.View.bgSizeModifier.setSize([undefined, newSize[1]]);
-
-        //     // surface.PaddingModifier.setSize([undefined, surface.getSize()[1]]);
-        // }.bind(views.Body));
-
-        views.Body.Email = email;
-        views.Body.Surface.Email = email;
-
-        // views.Body.bg = new Surface({
-        //     size: [undefined, undefined],
+        // // Create the From
+        // views.From = new View();
+        // views.From.Surface = new Surface({
+        //     content: Handlebars.helpers.personName(email.original.headers.From_Parsed[0]),
+        //     size: [undefined, 20],
+        //     classes: [],
         //     properties: {
-        //         // backgroundColor: "blue",
-        //         zIndex: "-1"
+        //         color: "black",
+        //         backgroundColor: "#f8f8f8",
+        //         lineHeight: "20px"
         //     }
         // });
-        // views.Body.bg.pipe(that.contentLayout);
+        // views.From.add(views.From.Surface);
 
-        // views.Body.bg.SizeModifier = new StateModifier();
-        // views.Body.TransitionModifier = new StateModifier({
-        //     transform: Transform.translate(window.innerWidth,0,0)
+        // views.From.Surface.pipe(that.contentLayout);
+
+        // // Cc
+        // // Bcc
+
+        // // console.log(Handlebars);
+        // // console.log(Handlebars.helpers.personName(email.original.headers.From_Parsed[0]));
+
+        // // Pretty headers surface
+        // views.PrettyHeaders = new View();
+        // views.PrettyHeaders.Surface = new Surface({
+        //     content: JSON.stringify(email.original.headers),
+        //     size: [undefined, true]
         // });
-        // views.Body.PaddingModifier = new StateModifier({
-        //     // will be changing size
-        //     // size: [window.innerWidth - 20, true]
+        // views.PrettyHeaders.DisplayMod = new StateModifier();
+
+        // views.PrettyHeaders.add(views.PrettyHeaders.DisplayMod).add(views.PrettyHeaders.Surface.RealSizeMod).add(views.PrettyHeaders.Surface);
+        // views.PrettyHeaders.Surface.pipe(that.contentLayout);
+
+        // views.Body = new View();
+        // views.Body.Surface = new Surface({
+        //     content: that.display_bodies(email),
+        //     // content: nl2br(emails[index]),
+        //     // size: [(window.innerWidth) - ((window.innerWidth / 5) * index), true],
+        //     size: [window.innerWidth - 10, true],
+        //     classes: ["email-list-item"],
+        //     properties: {
+        //         lineHeight: '20px',
+        //         padding: '5px',
+        //         // borderRadius: "3px",
+        //         backgroundColor: "white"
+        //         // backgroundColor: "hsl(" + ((index+1) * 360 / 40) + ", 100%, 50%)",
+        //     }
         // });
-        // views.Body.OriginModifier = new StateModifier({
-        //     origin: [0.5, 0.5]
-        //     // will be changing size
-        //     // size: [window.innerWidth - 20, true]
+        // views.Body.Surface.pipe(that.contentLayout);
+        // // views.Body.Surface.on('sizeUpdated', function(newSize){
+
+        // //     console.info('deployed newSize in Thread', newSize);
+        // //     // console.log(this);
+        // //     // console.log(this._size);
+        // //     // console.log(this.getSize(true));
+
+        // //     var paddingSize = 10;
+        // //     this.View.PaddingModifier.setSize([undefined, newSize[1] + paddingSize]);
+
+        // //     // console.log(newSize[1] + paddingSize);
+        // //     // this.View.bgSizeModifier.setSize([undefined, newSize[1]]);
+
+        // //     // surface.PaddingModifier.setSize([undefined, surface.getSize()[1]]);
+        // // }.bind(views.Body));
+
+        // views.Body.Email = email;
+        // views.Body.Surface.Email = email;
+
+        // // views.Body.bg = new Surface({
+        // //     size: [undefined, undefined],
+        // //     properties: {
+        // //         // backgroundColor: "blue",
+        // //         zIndex: "-1"
+        // //     }
+        // // });
+        // // views.Body.bg.pipe(that.contentLayout);
+
+        // // views.Body.bg.SizeModifier = new StateModifier();
+        // // views.Body.TransitionModifier = new StateModifier({
+        // //     transform: Transform.translate(window.innerWidth,0,0)
+        // // });
+        // // views.Body.PaddingModifier = new StateModifier({
+        // //     // will be changing size
+        // //     // size: [window.innerWidth - 20, true]
+        // // });
+        // // views.Body.OriginModifier = new StateModifier({
+        // //     origin: [0.5, 0.5]
+        // //     // will be changing size
+        // //     // size: [window.innerWidth - 20, true]
+        // // });
+        // // var node = surface.View.add(surface.View.TransitionModifier).add(surface.View.PaddingModifier);
+        // // node.add(surface.View.bg);
+        // // node.add(surface.View.OriginModifier).add(surface);
+
+        // views.Body.add(views.Body.Surface.RealSizeMod).add(views.Body.Surface);
+
+        // views.Spacer = new View();
+        // views.Spacer.Surface = new Surface({
+        //     size: [undefined, 20]
         // });
-        // var node = surface.View.add(surface.View.TransitionModifier).add(surface.View.PaddingModifier);
-        // node.add(surface.View.bg);
-        // node.add(surface.View.OriginModifier).add(surface);
+        // views.Spacer.add(views.Spacer.Surface);
+        // views.Spacer.Surface.pipe(that.contentLayout);
 
-        views.Body.add(views.Body.Surface.RealSizeMod).add(views.Body.Surface);
+        // EmailSeq.push(views.From);
+        // EmailSeq.push(views.Body);
+        // EmailSeq.push(views.Spacer);
 
-        views.Spacer = new View();
-        views.Spacer.Surface = new Surface({
-            size: [undefined, 20]
-        });
-        views.Spacer.add(views.Spacer.Surface);
-        views.Spacer.Surface.pipe(that.contentLayout);
-
-        EmailSeq.push(views.From);
-        EmailSeq.push(views.Body);
-        EmailSeq.push(views.Spacer);
-
-        // Add views to SeqLayout object for accessing easily later
-        EmailsSeqLayout.views = views;
+        // // Add views to SeqLayout object for accessing easily later
+        // EmailsSeqLayout.views = views;
 
 
-        EmailsSeqLayout.sequenceFrom(EmailSeq);
+        // EmailsSeqLayout.sequenceFrom(EmailSeq);
 
-        // Transform in
-        // - not sure if it has even been displayed
-        // that.whenPageVisible(function(){
-        if(that._whenPageVisible === true){
-            Timer.setTimeout(function(){
-                this.TransitionModifier.setTransform(Transform.translate(0,0,0), { duration: 500, curve: 'easeOutBounce' });
-            }.bind(EmailView), index * 100);
-            console.log('transform in from PageVisible');
-        }
-        // });
+        // // Transform in
+        // // - not sure if it has even been displayed
+        // // that.whenPageVisible(function(){
+        // if(that._whenPageVisible === true){
+        //     Timer.setTimeout(function(){
+        //         this.TransitionModifier.setTransform(Transform.translate(0,0,0), { duration: 500, curve: 'easeOutBounce' });
+        //     }.bind(EmailView), index * 100);
+        //     console.log('transform in from PageVisible');
+        // }
+        // // });
 
-        // // surface.pipe(surface.draggable)
-        // surface.pipe(that.contentLayout);
-        EmailView.add(EmailView.TransitionModifier).add(EmailsSeqLayout);
-        // EmailView.TransitionModifier.add(EmailsSeqlayout)
+        // // // surface.pipe(surface.draggable)
+        // // surface.pipe(that.contentLayout);
+        // EmailView.add(EmailView.TransitionModifier).add(EmailsSeqLayout);
+        // // EmailView.TransitionModifier.add(EmailsSeqlayout)
 
 
         this.contentLayout.Views.splice(this.contentLayout.Views.length-1, 0, EmailView);
         this.collection.infiniteResults += 1;
 
+    };
+
+    SubView.prototype.build_body = function(email){
+        var that = this;
+
+        return {
+            surface: {
+                key: 'Body',
+                surface: new Surface({
+                    content: that.display_bodies(email),
+                    size: [undefined, true],
+                    classes: ['email-list-item-body']
+                }),
+                pipe: that.contentLayout
+            }
+        };
     };
 
     SubView.prototype.display_bodies = function(Email, no_nl2br) {
@@ -411,7 +450,7 @@ define(function(require, exports, module) {
             i++;
             var content = '';
             
-            pieceOfData.Body = Utils.safeString(pieceOfData.Body);
+            pieceOfData.Body = pieceOfData.Data; //Utils.safeString(pieceOfData.Data);
 
             try {
                 if(pieceOfData.Body.length > 0){
@@ -460,9 +499,13 @@ define(function(require, exports, module) {
         // Clickable selector to see the rest of the conversation
         // - only if the conversation is much longer
         if (i > 1){
-            //tmp += '<div class="ParsedDataShowAll"><span>show '+ (i-1) +' previous</span></div>';
-            tmp += '<div class="ParsedDataShowAll clearfix"><span class="expander">...</span><span class="edit">E</span></div>';
+            // //tmp += '<div class="ParsedDataShowAll"><span>show '+ (i-1) +' previous</span></div>';
+
+            // Uncomment the following (latest version)
+            // tmp += '<div class="ParsedDataShowAll clearfix"><span class="expander">...</span><span class="edit">E</span></div>';
         }
+
+        console.log(tmp);
 
         // console.log(Handlebars);
         // return new Handlebars.SafeString(tmp);
@@ -499,7 +542,6 @@ define(function(require, exports, module) {
 
         // Resort the contentLayout.Views
         this.contentLayout.Views = _.sortBy(this.contentLayout.Views, function(v){
-            // console.log(v.Model.get('created'));
             return v.Model.get('created');
         });
         this.contentLayout.Views.reverse();
