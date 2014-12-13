@@ -167,8 +167,9 @@ define(function(require, exports, module) {
         var that = this;
 
         // Inputs
-        var inputSurface;
+        var inputSurface = null;
         if(opts.type == 'textarea'){
+            console.log(opts);
             inputSurface = new TextareaSurface({
                 name: opts.name,
                 placeholder: opts.placeholder,
@@ -192,14 +193,21 @@ define(function(require, exports, module) {
         }
         this.Surface = inputSurface;
 
+        var nextSurface;
+
         // Build Margins
-        var boxLayout = new BoxLayout({ margins: opts.margins });
-        boxLayout.middleAdd(inputSurface);
+        if(opts.margins){
+            var boxLayout = new BoxLayout({ margins: opts.margins });
+            boxLayout.middleAdd(inputSurface);
+            nextSurface = boxLayout;
+        } else {
+            nextSurface = inputSurface;
+        }
 
         inputSurface.View = new View();
         inputSurface.View.StateModifier = new StateModifier();
         this.StateModifier = inputSurface.View.StateModifier;
-        inputSurface.View.add(inputSurface.View.StateModifier).add(boxLayout);
+        inputSurface.View.add(inputSurface.View.StateModifier).add(nextSurface);
 
         if(opts.form){
 
@@ -219,6 +227,7 @@ define(function(require, exports, module) {
         }
 
         this._value = function(){
+            console.log(inputSurface.getValue());
             return inputSurface.getValue();
         };
 
@@ -308,7 +317,8 @@ define(function(require, exports, module) {
         };
 
         this._setContent = function(data){
-            inputSurface.setContent(data);
+            debugger;
+            inputSurface.setValue(data);
         };
 
         this.add(inputSurface.View);

@@ -101,6 +101,7 @@ define(function(require, exports, module) {
             returnNode = result[1];
         } else {
             console.error('missing type of Layout to build');
+            console.log(options);
             debugger;
         }
 
@@ -217,7 +218,8 @@ define(function(require, exports, module) {
                 endNode.sizer.push(tmpSurf);
                 return;
             }
-            // expecting an Object
+
+            // expecting an Object with keys like size,origin,align
             var tmpMod = new Modifier(modObj);
 
             nodeTmp.push(nodeTmp[nodeTmp.length - 1].add(tmpMod));
@@ -304,7 +306,12 @@ define(function(require, exports, module) {
                     tmp.Views.forEach(function(v){
                         // console.log(v);
                         // console.log(v.getSize());
-                        var h = v.getSize(true)[1];
+                        var h = 0;
+                        try{
+                            h = v.getSize(true)[1];
+                        }catch(err){
+                            console.log('nosize');
+                        }
                         if(h > maxHeight){
                             maxHeight = h;
                         }
@@ -343,9 +350,8 @@ define(function(require, exports, module) {
 
                     if(objTempNode.hasName){
                         tmp[objTempNode.hasName] = objTempNode[objTempNode.hasName];
+                        tmp[objTempNode.hasName].NodeWithMods = objTempNode;
                     } else {
-                        console.log(name);
-                        debugger;
                         tmp[name] = objTempNode;
                     }
                 } else {
@@ -386,16 +392,53 @@ define(function(require, exports, module) {
         });
         tmp.Views = [];
 
+        if(options.size){
+            // Expecting a True in either one
+            // - otherwise, returning undefined for h/w
+
+            // Used for true Height or Width(v2) 
+            // - only allowing horizontal direction for now?
+            var h,w;
+            if(options.direction == 0 && options.size[1] === true){
+
+                tmp.getSize = function(){
+
+                    var maxHeight = 0;
+
+                    tmp.Views.forEach(function(v){
+                        // console.log(v);
+                        // console.log(v.getSize());
+                        var h = 0;
+                        try{
+                            h = v.getSize(true)[1];
+                        }catch(err){
+                            console.log('nosize');
+                        }
+                        if(h > maxHeight){
+                            maxHeight = h;
+                        }
+                    });
+
+                    return [undefined, maxHeight];
+                }
+                
+            }
+        }
+        
         // sequenceFrom
         options.sequenceFrom.forEach(function(obj){
 
             var tmpNode;
-            if(obj instanceof ElementOutput ||
+            if(obj instanceof SequentialLayout ||
+                obj instanceof ElementOutput ||
                obj instanceof RenderNode ||
                obj instanceof View ||
                obj instanceof Surface){
                 tmpNode = obj;
 
+            } else if(obj == null){
+                // skip this one
+                return;
             } else if((typeof obj).toLowerCase() == 'object'){
                 var typofLayout = _.without(Object.keys(obj),'size','mods','deploy','dimensions','sequenceFrom','deploy','plane')[0]; // "surface"
                 var name = obj[typofLayout].key ? obj[typofLayout].key : Object.keys(obj[typofLayout])[0];
@@ -408,6 +451,7 @@ define(function(require, exports, module) {
                 // }
                 if(tmpNode.hasName){
                     tmp[tmpNode.hasName] = tmpNode[tmpNode.hasName];
+                    tmp[tmpNode.hasName].NodeWithMods = tmpNode;
                 } else {
                     console.log(name);
                     debugger;
@@ -457,7 +501,16 @@ define(function(require, exports, module) {
                 var typofLayout = _.without(Object.keys(obj),'size','mods','deploy','plane')[0]; // "surface"
                 var name = obj[typofLayout].key ? obj[typofLayout].key : Object.keys(obj[typofLayout])[0];
                 tmpNode = new LayoutBuilder(obj);
-                tmp[name] = tmpNode;
+                // tmp[name] = tmpNode;
+                // tmp[name].NodeWithMods = tmpNode;
+                if(tmpNode.hasName){
+                    tmp[tmpNode.hasName] = tmpNode[tmpNode.hasName];
+                    tmp[tmpNode.hasName].NodeWithMods = tmpNode;
+                } else {
+                    console.log(name);
+                    debugger;
+                    tmp[name] = tmpNode;
+                }
             } else {
                 console.error('unknown type');
                 debugger;
@@ -484,6 +537,43 @@ define(function(require, exports, module) {
         });
         tmp.Views = [];
 
+        if(options.size){
+            // Expecting a True in either one
+            // - otherwise, returning undefined for h/w
+
+            // Used for true Height or Width(v2) 
+            // - only calculating the Height at the moment
+            var h,w;
+
+            // Height
+            if(options.size[1] === true){
+
+                tmp.getSize = function(){
+                    
+                    var columnCount = options.dimensions[0];
+
+                    // Uses the number of rows to determine the max-height of an individual column
+
+                    var maxHeights = _.map(_.range(columnCount), function(){return 0;}); // number of columns we're counting
+
+                    tmp.Views.forEach(function(v,i){
+                        var h = v.getSize(true)[1];
+                        maxHeights[columnCount%(i+1)] += h;
+                        // if(h > maxHeight){
+                        //     maxHeight = h;
+                        // }
+                    });
+                    
+                    return [undefined, Math.max(maxHeights)];
+                }
+                
+            }
+
+            // Width
+            // - todo
+
+        }
+
         // sequenceFrom
         options.sequenceFrom.forEach(function(obj){
 
@@ -498,8 +588,11 @@ define(function(require, exports, module) {
                 var name = obj[typofLayout].key ? obj[typofLayout].key : Object.keys(obj[typofLayout])[0];
                 tmpNode = new LayoutBuilder(obj);
                 if(tmpNode.hasName){
-                    tmp[name] = tmpNode[tmpNode.hasName];
+                    tmp[tmpNode.hasName] = tmpNode[tmpNode.hasName];
+                    tmp[tmpNode.hasName].NodeWithMods = tmpNode;
                 } else {
+                    console.log(name);
+                    debugger;
                     tmp[name] = tmpNode;
                 }
             } else {
@@ -561,6 +654,7 @@ define(function(require, exports, module) {
                 tmpNode = new LayoutBuilder(obj);
                 if(tmpNode.hasName){
                     tmp[name] = tmpNode[tmpNode.hasName];
+                    tmp[name].NodeWithMods = tmpNode;
                 } else {
                     tmp[name] = tmpNode;
                 }
@@ -569,7 +663,7 @@ define(function(require, exports, module) {
                 debugger;
             }
 
-            console.info('tmpNode', tmpNode);
+            // console.info('tmpNode', tmpNode);
             tmp.Views.push(tmpNode);
         });
 
@@ -581,6 +675,12 @@ define(function(require, exports, module) {
                     tmp.show(viewToShow);
                 // },1);
             }
+        }
+
+        if(options.events){
+            // Timer.setTimeout(function(){
+                options.events(tmp);
+            // },1);
         }
 
         var newNode = this.buildModsForNode( tmp, options );
